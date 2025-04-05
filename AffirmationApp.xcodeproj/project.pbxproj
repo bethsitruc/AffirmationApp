@@ -12,6 +12,7 @@
 		1D655C4F2DA041AD00CEBEFC /* AffirmationWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1D655C3B2DA041AC00CEBEFC /* AffirmationWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		1DCB4B772DA0C60A0078B9F2 /* AffirmationShared in Frameworks */ = {isa = PBXBuildFile; productRef = 1DCB4B762DA0C60A0078B9F2 /* AffirmationShared */; };
 		1DCB4B792DA0C6210078B9F2 /* AffirmationShared in Frameworks */ = {isa = PBXBuildFile; productRef = 1DCB4B782DA0C6210078B9F2 /* AffirmationShared */; };
+		1DCB4C0E2DA0DF880078B9F2 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 1DCB4C0D2DA0DF850078B9F2 /* .gitignore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +61,7 @@
 		1D655C3D2DA041AC00CEBEFC /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		1D655C3F2DA041AC00CEBEFC /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		1D8E4E3F2DA0659700ED37AE /* AffirmationWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AffirmationWidgetExtension.entitlements; sourceTree = "<group>"; };
+		1DCB4C0D2DA0DF850078B9F2 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -124,6 +126,7 @@
 		1D655BFD2DA0405300CEBEFC = {
 			isa = PBXGroup;
 			children = (
+				1DCB4C0D2DA0DF850078B9F2 /* .gitignore */,
 				1D8E4E3F2DA0659700ED37AE /* AffirmationWidgetExtension.entitlements */,
 				1D655C082DA0405300CEBEFC /* AffirmationApp */,
 				1D655C172DA0405400CEBEFC /* AffirmationAppTests */,
@@ -307,6 +310,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1DCB4C0E2DA0DF880078B9F2 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
