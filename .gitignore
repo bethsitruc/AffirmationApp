@@ -1,1 +1,22 @@
-# Ignore nothing for now
+# Build files
+build/
+DerivedData/
+
+# Xcode user settings
+*.xcuserdatad
+*.xcscmblueprint
+*.xcworkspace
+project.xcworkspace
+
+# SwiftPM
+.swiftpm/
+Package.resolved
+
+# API keys & configs
+Secrets.xcconfig
+
+# macOS metadata
+.DS_Store
+
+# Xcode previews
+*.preview-thumbnails
