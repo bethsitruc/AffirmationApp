@@ -11,7 +11,7 @@ import SwiftUI
 struct AffirmationAppApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AffirmationView(store: AffirmationStore())
         }
     }
 }
