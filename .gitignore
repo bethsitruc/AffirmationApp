@@ -20,3 +20,7 @@ Secrets.xcconfig
 
 # Xcode previews
 *.preview-thumbnails
+
+echo "Secrets.xcconfig" >> .gitignore
+git add .gitignore
+git commit -m "Ignore Secrets.xcconfig"Secrets.xcconfig
