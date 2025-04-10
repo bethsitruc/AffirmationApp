@@ -10,6 +10,8 @@
 		1D655C3E2DA041AC00CEBEFC /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D655C3D2DA041AC00CEBEFC /* WidgetKit.framework */; };
 		1D655C402DA041AC00CEBEFC /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D655C3F2DA041AC00CEBEFC /* SwiftUI.framework */; };
 		1D655C4F2DA041AD00CEBEFC /* AffirmationWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1D655C3B2DA041AC00CEBEFC /* AffirmationWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		1D66172D2DA6C0B300375D77 /* AffirmationIntent.intentdefinition in Resources */ = {isa = PBXBuildFile; fileRef = 1D66172C2DA6C0B300375D77 /* AffirmationIntent.intentdefinition */; };
+		1D66172E2DA6C23C00375D77 /* AffirmationIntent.intentdefinition in Sources */ = {isa = PBXBuildFile; fileRef = 1D66172C2DA6C0B300375D77 /* AffirmationIntent.intentdefinition */; };
 		1DCB4B772DA0C60A0078B9F2 /* AffirmationShared in Frameworks */ = {isa = PBXBuildFile; productRef = 1DCB4B762DA0C60A0078B9F2 /* AffirmationShared */; };
 		1DCB4B792DA0C6210078B9F2 /* AffirmationShared in Frameworks */ = {isa = PBXBuildFile; productRef = 1DCB4B782DA0C6210078B9F2 /* AffirmationShared */; };
 /* End PBXBuildFile section */
@@ -59,6 +61,7 @@
 		1D655C3B2DA041AC00CEBEFC /* AffirmationWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AffirmationWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D655C3D2DA041AC00CEBEFC /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		1D655C3F2DA041AC00CEBEFC /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		1D66172C2DA6C0B300375D77 /* AffirmationIntent.intentdefinition */ = {isa = PBXFileReference; lastKnownFileType = file.intentdefinition; path = AffirmationIntent.intentdefinition; sourceTree = "<group>"; };
 		1D8E4E3F2DA0659700ED37AE /* AffirmationWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AffirmationWidgetExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -147,6 +150,7 @@
 		1D655BFD2DA0405300CEBEFC = {
 			isa = PBXGroup;
 			children = (
+				1D66172C2DA6C0B300375D77 /* AffirmationIntent.intentdefinition */,
 				1D8E4E3F2DA0659700ED37AE /* AffirmationWidgetExtension.entitlements */,
 				1D655C082DA0405300CEBEFC /* AffirmationApp */,
 				1D655C172DA0405400CEBEFC /* AffirmationAppTests */,
@@ -330,6 +334,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1D66172D2DA6C0B300375D77 /* AffirmationIntent.intentdefinition in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -382,6 +387,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1D66172E2DA6C23C00375D77 /* AffirmationIntent.intentdefinition in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -532,6 +538,7 @@
 				DEVELOPMENT_TEAM = 8FG7Z76UN3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AffirmationApp/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -572,6 +579,7 @@
 				DEVELOPMENT_TEAM = 8FG7Z76UN3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AffirmationApp/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

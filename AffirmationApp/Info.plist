@@ -2,7 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>OPENAI_API_KEY</key>
-	<string>$(OPENAI_API_KEY)</string>
+	<key>IntentsSupported</key>
+	<string>WidgetAffirmationIntent</string>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>WidgetAffirmationIntentIntent</string>
+	</array>
 </dict>
 </plist>
