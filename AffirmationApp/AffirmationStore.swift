@@ -1,43 +1,63 @@
 import Foundation
 
+// AffirmationStore is responsible for managing the app's list of affirmations,
+// including both pre-loaded and user-submitted ones. It handles saving/loading from UserDefaults,
+// updating affirmations, toggling favorites, and managing a "surprise" affirmation.
 class AffirmationStore: ObservableObject {
+    // Stored affirmations loaded from disk or defaults
     @Published var affirmations: [Affirmation] = [] {
         didSet {
             saveAffirmations()
         }
     }
-    
+
+    // Affirmations submitted by the user
+    @Published var userSubmittedAffirmations: [Affirmation] = [] {
+        didSet {
+            saveUserSubmittedAffirmations()
+        }
+    }
+
+    // A randomly chosen affirmation for the "Surprise Me" feature
     @Published var surpriseAffirmation: Affirmation?
 
     private let key = "affirmations_key"
+    private let userKey = "user_submitted_affirmations_key"
 
+    // Initialize and load stored affirmations
     init() {
         loadAffirmations()
+        loadUserSubmittedAffirmations()
     }
 
+    // Toggle the favorite status of a given affirmation
     func toggleFavorite(for affirmation: Affirmation) {
         if let index = affirmations.firstIndex(of: affirmation) {
             affirmations[index].isFavorite.toggle()
         }
     }
 
+    // Save built-in affirmations to UserDefaults
     private func saveAffirmations() {
         if let data = try? JSONEncoder().encode(affirmations) {
             UserDefaults(suiteName: "group.bethsitruc.affirmationapp")?.set(data, forKey: key)
         }
     }
 
+    // Load affirmations from UserDefaults or populate with default values
     private func loadAffirmations() {
         if let data = UserDefaults(suiteName: "group.bethsitruc.affirmationapp")?.data(forKey: key),
            let saved = try? JSONDecoder().decode([Affirmation].self, from: data) {
             self.affirmations = saved
-            
+
+            // Filter out any themes not in the approved list
             let allowedThemes = ["self-worth", "confidence", "resilience", "growth", "kindness", "optimism", "motivation"]
             self.affirmations = self.affirmations.map { affirmation in
                 let filteredThemes = affirmation.themes.filter { allowedThemes.contains($0.lowercased()) }
                 return Affirmation(id: affirmation.id, text: affirmation.text, isFavorite: affirmation.isFavorite, themes: filteredThemes)
             }
         } else {
+            // Default affirmations if none are found in UserDefaults
             self.affirmations = [
                 Affirmation(id: UUID(), text: "You are enough.", themes: ["self-worth"]),
                 Affirmation(id: UUID(), text: "Believe you can and you're halfway there. – Theodore Roosevelt", themes: ["confidence", "motivation"]),
@@ -77,13 +97,76 @@ class AffirmationStore: ObservableObject {
         }
     }
 
+    // Return all affirmations marked as favorite
     func favoriteAffirmations() -> [Affirmation] {
-        affirmations.filter { $0.isFavorite }
+        (affirmations + userSubmittedAffirmations).filter { $0.isFavorite }
     }
 
+    // Pick a random affirmation from both built-in and user-submitted lists
     func generateSurpriseAffirmation() {
-        if !affirmations.isEmpty {
-            surpriseAffirmation = affirmations.randomElement()
+        if !(affirmations + userSubmittedAffirmations).isEmpty {
+            surpriseAffirmation = (affirmations + userSubmittedAffirmations).randomElement()
         }
     }
+
+    // Save user-submitted affirmations to UserDefaults
+    private func saveUserSubmittedAffirmations() {
+        if let data = try? JSONEncoder().encode(userSubmittedAffirmations) {
+            UserDefaults(suiteName: "group.bethsitruc.affirmationapp")?.set(data, forKey: userKey)
+        }
+    }
+
+    // Load user-submitted affirmations from UserDefaults
+    private func loadUserSubmittedAffirmations() {
+        if let data = UserDefaults(suiteName: "group.bethsitruc.affirmationapp")?.data(forKey: userKey),
+           let saved = try? JSONDecoder().decode([Affirmation].self, from: data) {
+            self.userSubmittedAffirmations = saved
+        }
+    }
+
+    // Add a new user-submitted affirmation
+    func addUserAffirmation(text: String, themes: [String], isUserCreated: Bool) {
+        let newAffirmation = Affirmation(id: UUID(), text: text, isFavorite: false, isUserCreated: isUserCreated, themes: themes)
+        userSubmittedAffirmations.append(newAffirmation)
+    }
+
+    // Update an existing affirmation, or add it if it's not found (with notification)
+    func update(_ affirmation: Affirmation) {
+        if affirmation.isUserCreated {
+            if let index = userSubmittedAffirmations.firstIndex(where: { $0.id == affirmation.id }) {
+                userSubmittedAffirmations[index] = affirmation
+            } else {
+                // Notify observers if not found
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .affirmationNotFound, object: nil, userInfo: ["id": affirmation.id.uuidString])
+                }
+                userSubmittedAffirmations.append(affirmation)
+            }
+        } else {
+            if let index = affirmations.firstIndex(where: { $0.id == affirmation.id }) {
+                affirmations[index] = affirmation
+            } else {
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .affirmationNotFound, object: nil, userInfo: ["id": affirmation.id.uuidString])
+                }
+                affirmations.append(affirmation)
+            }
+        }
+    }
+
+    // Delete a user-submitted affirmation by ID
+    func deleteUserAffirmation(_ affirmation: Affirmation) {
+        if let index = userSubmittedAffirmations.firstIndex(where: { $0.id == affirmation.id }) {
+            userSubmittedAffirmations.remove(at: index)
+        } else {
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .affirmationNotFound, object: nil, userInfo: ["id": affirmation.id.uuidString])
+            }
+        }
+    }
+}
+
+// Custom notification for when an affirmation can't be found in the store
+extension Notification.Name {
+    static let affirmationNotFound = Notification.Name("affirmationNotFound")
 }

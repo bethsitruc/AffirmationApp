@@ -7,16 +7,24 @@
 import SwiftUI
 import WidgetKit
 
+/// A view that displays the user's favorite affirmations.
+/// Includes the ability to pin an affirmation to a widget and unpin it.
+/// Users can also remove affirmations from favorites.
 struct FavoritesView: View {
+    // Reference to the shared affirmation store that holds all affirmations and favorites
     @ObservedObject var store: AffirmationStore
 
     var body: some View {
+        // Main layout container for the Favorites screen
         VStack {
+            // Title of the Favorites section
             Text("Your Favorite Affirmations")
                 .font(.headline)
                 .padding()
 
+            // Scrollable area for either empty state or the list of favorite affirmations
             ScrollView {
+                // Show empty state if no affirmations are favorited
                 if store.favoriteAffirmations().isEmpty {
                     VStack(spacing: 8) {
                         Image(systemName: "heart.slash")
@@ -29,8 +37,10 @@ struct FavoritesView: View {
                     .frame(maxWidth: .infinity, minHeight: 200)
                     .padding()
                 } else {
+                    // Grid layout to display each favorite affirmation in a styled tile
                     LazyVGrid(columns: [GridItem(.flexible())], spacing: 16) {
                         ForEach(store.favoriteAffirmations(), id: \.id) { affirmation in
+                            // Determine if the current affirmation is the one pinned to the widget
                             let isPinned = UserDefaults(suiteName: "group.bethsitruc.affirmationapp")?.string(forKey: "selected_widget_affirmation") == affirmation.text
 
                             VStack {
@@ -41,6 +51,7 @@ struct FavoritesView: View {
                                     .multilineTextAlignment(.center)
                                     .frame(maxWidth: .infinity)
 
+                                // Handle pinning or unpinning the affirmation to the home screen widget
                                 if !isPinned {
                                     Button(action: {
                                         let affirmationText = affirmation.text
@@ -64,6 +75,7 @@ struct FavoritesView: View {
                                     .padding(.bottom, 4)
                                 }
 
+                                // Handle unfavoriting the affirmation
                                 Button(action: {
                                     withAnimation {
                                         store.toggleFavorite(for: affirmation)
@@ -74,6 +86,7 @@ struct FavoritesView: View {
                                         .foregroundColor(.red)
                                 }
                             }
+                            // Style the tile with color and pin highlight
                             .frame(height: 180)
                             .background(tileColor(for: store.affirmations.firstIndex(of: affirmation) ?? 0))
                             .overlay(
@@ -92,6 +105,7 @@ struct FavoritesView: View {
         .navigationTitle("Favorites")
     }
     
+    // Returns a font style based on the index for visual variety
     func fontStyle(for index: Int) -> Font {
         let fonts: [Font] = [
             .custom("Georgia-Bold", size: 20),
@@ -106,6 +120,7 @@ struct FavoritesView: View {
         return fonts[index % fonts.count]
     }
     
+    // Returns a background color for the tile based on the index
     func tileColor(for index: Int) -> Color {
         let colors: [Color] = [
             .blue.opacity(0.2),
