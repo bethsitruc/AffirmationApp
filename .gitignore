@@ -20,3 +20,33 @@ Secrets.xcconfig
 
 # Xcode previews
 *.preview-thumbnails
+
+# Ignore user-specific Xcode data and macOS artifacts
+.DS_Store
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad
+**/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.swiftpm/xcode/xcuserdata/
+*.xcschememanagement.plist
+
+# Ignore macOS and Xcode user/workspace files that should not be in source control
+.DS_Store
+*.xcuserstate
+*.xcuserdatad
+**/xcuserdata/
+**/project.xcworkspace/xcuserdata/
+**/xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcschememanagement.plist
+
+# Ignore SwiftPM workspace user state (can cause duplicated workspace files)
+AffirmationShared/.swiftpm/
+
+# Ignore build & derived artifacts
+DerivedData/
+build/
+*.xcresult
+
+# Keep generated app icons, asset contents checked-in but ignore workspace user files

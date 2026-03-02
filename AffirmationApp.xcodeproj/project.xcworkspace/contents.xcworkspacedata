@@ -4,4 +4,10 @@
    <FileRef
       location = "self:">
    </FileRef>
+   <FileRef
+      location = "group:AffirmationFilters.swift">
+   </FileRef>
+   <FileRef
+      location = "group:AffirmationPersistenceTests.swift">
+   </FileRef>
 </Workspace>
