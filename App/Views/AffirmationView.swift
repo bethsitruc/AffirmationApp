@@ -613,16 +613,19 @@ struct MainAffirmationView: View {
     private var aboutSheet: some View {
         NavigationView {
             List {
-                Section(header: Text("About AffirmationApp").foregroundColor(appearance.theme.secondaryText)) {
-                    Text("AffirmationApp keeps your favorite encouragement close by. Save personal entries, favorite built-ins, and ask Apple Intelligence to suggest fresh phrases when you need them.")
+                Section(header: Text("About Grounded: Affirmations App").foregroundColor(appearance.theme.secondaryText)) {
+                    Text("Grounded: Affirmations App keeps your favorite encouragement close by. Save personal entries, favorite built-ins, and ask Apple Intelligence to suggest fresh phrases when you need them.")
                         .font(.body)
                         .foregroundColor(.primary)
+                    Text("Questions? bethanycurtis.builds@gmail.com")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                 }
 
                 Section(header: Text("Using The Home Widget").foregroundColor(appearance.theme.secondaryText)) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("1. Long-press the Home Screen and tap the + button.")
-                        Text("2. Search for AffirmationApp and choose either **Affirmation** (specific) or **Affirmation Shuffle**.")
+                        Text("2. Search for Grounded and choose either **Affirmation** (specific) or **Affirmation Shuffle**.")
                         Text("3. Tap the widget once it’s placed to pick the source, exact affirmation, and shuffle cadence. Colors and typography follow your appearance settings.")
                         Text("4. If things ever look stale, tap **Reload Widget Timelines** below.")
                     }

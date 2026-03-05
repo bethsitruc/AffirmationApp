@@ -35,14 +35,14 @@ struct SettingsView: View {
             }
 
             Section("Home Widget") {
-                Text("Long-press the Home Screen, tap “+”, search for AffirmationApp, then choose Affirmation or Shuffle. Tap the widget once it’s placed to pick the source and cadence.")
+                Text("Long-press the Home Screen, tap “+”, search for Grounded, then choose Affirmation or Shuffle. Tap the widget once it’s placed to pick the source and cadence.")
                     .font(.body)
                     .foregroundColor(.primary)
             }
 
             Section("About") {
-                Text("AffirmationApp keeps your favorite encouragement close by. Save personal entries, favorite built-ins, or ask Apple Intelligence for something new.")
-                Text("Questions? support@affirmationapp.example")
+                Text("Grounded: Affirmations App keeps your favorite encouragement close by. Save personal entries, favorite built-ins, or ask Apple Intelligence for something new.")
+                Text("Questions? bethanycurtis.builds@gmail.com")
                     .foregroundColor(.secondary)
             }
         }

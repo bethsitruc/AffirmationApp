@@ -104,7 +104,7 @@ struct AffirmationShareCardView: View {
             VStack(alignment: .leading, spacing: 24) {
                 if includeBadge {
                     Label {
-                        Text("AffirmationApp")
+                        Text("Grounded")
                     } icon: {
                         DS.Icons.badgeLeaf(size: 30, color: theme.accentColor)
                     }

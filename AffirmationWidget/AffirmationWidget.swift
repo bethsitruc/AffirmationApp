@@ -232,7 +232,7 @@ struct AffirmationSpecificWidget: Widget {
         AppIntentConfiguration(kind: kind, intent: AffirmationSpecificWidgetIntent.self, provider: AffirmationWidgetProvider<AffirmationSpecificWidgetIntent>()) { entry in
             AffirmationWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("Affirmation")
+        .configurationDisplayName("Grounded Affirmation")
         .description("Pin a specific favorite or personal affirmation to your Home Screen.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
@@ -246,7 +246,7 @@ struct AffirmationShuffleWidget: Widget {
         AppIntentConfiguration(kind: kind, intent: AffirmationShuffleWidgetIntent.self, provider: AffirmationWidgetProvider<AffirmationShuffleWidgetIntent>()) { entry in
             AffirmationWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("Affirmation Shuffle")
+        .configurationDisplayName("Grounded Shuffle")
         .description("Rotate through your affirmations automatically on the Home Screen.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
