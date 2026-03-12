@@ -43,6 +43,7 @@ xcuserdata/
 
 # Ignore SwiftPM workspace user state (can cause duplicated workspace files)
 AffirmationShared/.swiftpm/
+AffirmationShared/.build/
 
 # Ignore build & derived artifacts
 DerivedData/
