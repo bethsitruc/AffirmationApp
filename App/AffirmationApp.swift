@@ -12,16 +12,14 @@ import AffirmationShared
 import SwiftUI
 import WidgetKit
 
-// Uses SharedDefaults helper for shared UserDefaults and app group management
-// Keys are now defined in SharedDefaults.swift
-// TODO: Ensure the correct App Group ID is set in SharedDefaults.swift before release
+// Uses SharedDefaults helper for shared UserDefaults and app group management.
+// Ensure `Config.appGroup` matches the App Group enabled for app + widget targets.
 
 @main // Marks this as the entry point of the SwiftUI app.
 struct AffirmationApp: App {
     // Use a single, long-lived store instance for the app UI.
     @StateObject private var store = AffirmationStore()
     @StateObject private var appearance = AppearanceSettings()
-    private let autoGenerator = AutoGenerationManager()
     private let homeRefresher = HomeFeedRefreshManager()
 
     // Use a small helper that fetches a fresh affirmation asynchronously.
@@ -32,16 +30,25 @@ struct AffirmationApp: App {
             // Pass the single store instance into the main view.
             AffirmationView(store: store)
                 .environmentObject(appearance)
-                // On startup ask for a fresh affirmation and publish it to an App Group
-                // so widgets and extensions can read the same latest affirmation.
+                // Refresh the shared latest quote on a cadence so widgets stay fresh
+                // without hitting the quote API on every launch.
                 .task {
-                    if let text = await fetcher.fetch() {
-                        SharedDefaults.set(text, forKey: UserDefaults.Keys.latestAffirmation)
-                        WidgetCenter.shared.reloadAllTimelines()
+                    if shouldRefreshLatestAffirmation {
+                        if let text = await fetcher.fetch() {
+                            SharedDefaults.set(text, forKey: UserDefaults.Keys.latestAffirmation)
+                            SharedDefaults.set(Date().timeIntervalSince1970, forKey: UserDefaults.Keys.latestAffirmationFetchedAt)
+                            WidgetCenter.shared.reloadAllTimelines()
+                        }
                     }
-                    await autoGenerator.runIfNeeded(store: store)
                     await homeRefresher.refreshIfNeeded(store: store)
                 }
         }
+    }
+
+    private var shouldRefreshLatestAffirmation: Bool {
+        let last = SharedDefaults.double(forKey: UserDefaults.Keys.latestAffirmationFetchedAt)
+        guard last > 0 else { return true }
+        let elapsed = Date().timeIntervalSince1970 - last
+        return elapsed >= Config.latestAffirmationFetchInterval
     }
 }

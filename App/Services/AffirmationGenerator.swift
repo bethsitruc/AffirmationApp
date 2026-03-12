@@ -60,7 +60,7 @@ struct AffirmationGenerator {
             return Result(
                 text: styled,
                 source: .network,
-                metadata: Metadata(theme: theme, tone: tone, note: "Fetched from affirmations.dev API fallback.")
+                metadata: Metadata(theme: theme, tone: tone, note: "Fetched from ZenQuotes API fallback.")
             )
         }
 

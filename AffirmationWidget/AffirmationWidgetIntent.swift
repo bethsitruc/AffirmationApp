@@ -9,13 +9,22 @@ enum AffirmationWidgetDisplayMode {
 enum AffirmationWidgetContentSource: String, AppEnum {
     case favorites
     case personal
-    case all
 
     static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Content Source")
     static var caseDisplayRepresentations: [AffirmationWidgetContentSource: DisplayRepresentation] = [
         .favorites: DisplayRepresentation(title: .init(stringLiteral: "Favorites")),
-        .personal: DisplayRepresentation(title: .init(stringLiteral: "My Affirmations")),
-        .all: DisplayRepresentation(title: .init(stringLiteral: "All Affirmations"))
+        .personal: DisplayRepresentation(title: .init(stringLiteral: "My Affirmations"))
+    ]
+}
+
+enum AffirmationSpecificSource: String, AppEnum {
+    case favorites
+    case personal
+
+    static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Content Source")
+    static var caseDisplayRepresentations: [AffirmationSpecificSource: DisplayRepresentation] = [
+        .favorites: DisplayRepresentation(title: .init(stringLiteral: "Favorites")),
+        .personal: DisplayRepresentation(title: .init(stringLiteral: "My Affirmations"))
     ]
 }
 
@@ -45,71 +54,61 @@ enum AffirmationWidgetShuffleInterval: Int, AppEnum {
     ]
 }
 
-@available(iOSApplicationExtension 17.0, *)
 protocol AffirmationWidgetConfigurationIntent: WidgetConfigurationIntent {
     var widgetMode: AffirmationWidgetDisplayMode { get }
-    var source: AffirmationWidgetContentSource? { get }
+    var resolvedSource: AffirmationWidgetContentSource { get }
     var widgetFontStyle: AffirmationWidgetFontStyle { get }
     var affirmation: AffirmationEntity? { get }
     var shuffleInterval: AffirmationWidgetShuffleInterval? { get }
 }
 
-@available(iOSApplicationExtension 17.0, *)
 extension AffirmationWidgetConfigurationIntent {
     var widgetFontStyle: AffirmationWidgetFontStyle {
         AppearancePreferences.font.widgetStyle
     }
 }
 
-@available(iOSApplicationExtension 17.0, *)
 struct AffirmationSpecificWidgetIntent: AffirmationWidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Specific Affirmation"
-    static var description = IntentDescription("Surface one of your favorites or personal affirmations.")
+    static var description = IntentDescription("Pin one favorite or personal affirmation.")
 
-    @Parameter(title: "Source")
-    var source: AffirmationWidgetContentSource?
-
-    @Parameter(title: "Specific Affirmation", requestValueDialog: IntentDialog("Pick a favorite or personal affirmation"))
+    @Parameter(title: "Choose", requestValueDialog: IntentDialog("Pick a favorite or personal affirmation"))
     var affirmation: AffirmationEntity?
 
     var widgetMode: AffirmationWidgetDisplayMode { .specific }
+    var resolvedSource: AffirmationWidgetContentSource { .favorites }
     var shuffleInterval: AffirmationWidgetShuffleInterval? { nil }
 
     init() {
-        self.source = .favorites
         self.affirmation = nil
     }
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Affirmation \(\.$affirmation) • Source \(\.$source)")
+        Summary("Choose \(\.$affirmation)")
     }
 }
 
-@available(iOSApplicationExtension 17.0, *)
 struct AffirmationShuffleWidgetIntent: AffirmationWidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Shuffle Affirmations"
-    static var description = IntentDescription("Rotate through a set of affirmations automatically.")
+    static var description = IntentDescription("Rotate your selected affirmation set.")
 
     @Parameter(title: "Source")
     var source: AffirmationWidgetContentSource?
 
-    @Parameter(title: "Shuffle Every")
-    var shuffleInterval: AffirmationWidgetShuffleInterval?
-
     var widgetMode: AffirmationWidgetDisplayMode { .shuffle }
+    var resolvedSource: AffirmationWidgetContentSource { source ?? .favorites }
     var affirmation: AffirmationEntity? { nil }
+    var shuffleInterval: AffirmationWidgetShuffleInterval? { .hourly }
 
     init() {
         self.source = .favorites
-        self.shuffleInterval = .hourly
     }
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Source \(\.$source) • Every \(\.$shuffleInterval)")
+        Summary("Source \(\.$source)")
     }
 }
 
-@available(iOSApplicationExtension 17.0, *)
 struct AffirmationEntity: AppEntity, Identifiable, Sendable {
     let id: UUID
     let text: String
@@ -125,6 +124,7 @@ struct AffirmationEntity: AppEntity, Identifiable, Sendable {
     static var defaultQuery = AffirmationQuery()
 
     var displayRepresentation: DisplayRepresentation {
+        let preview = Self.previewText(from: text)
         let subtitle: String
         switch origin {
         case .favorite: subtitle = "Favorite"
@@ -132,9 +132,17 @@ struct AffirmationEntity: AppEntity, Identifiable, Sendable {
         case .builtIn: subtitle = "Built In"
         }
         return DisplayRepresentation(
-            title: .init(stringLiteral: text),
+            title: .init(stringLiteral: preview),
             subtitle: .init(stringLiteral: subtitle)
         )
+    }
+
+    private static func previewText(from text: String) -> String {
+        let flattened = text
+            .replacingOccurrences(of: "\n", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard flattened.count > 34 else { return flattened }
+        return String(flattened.prefix(31)) + "..."
     }
 
     init(_ affirmation: Affirmation, origin: Origin) {
@@ -144,33 +152,40 @@ struct AffirmationEntity: AppEntity, Identifiable, Sendable {
     }
 }
 
-@available(iOSApplicationExtension 17.0, *)
 struct AffirmationQuery: EntityQuery {
     private let repository = WidgetAffirmationRepository()
 
     init() {}
 
     func entities(for identifiers: [AffirmationEntity.ID]) async throws -> [AffirmationEntity] {
-        let combined = repository.allAffirmations() + repository.personalAffirmations()
-        let mapped = combined.map { entity(for: $0) }
+        let mapped = selectedPool().map { entity(for: $0) }
         return mapped.filter { identifiers.contains($0.id) }
     }
 
     func suggestedEntities() async throws -> [AffirmationEntity] {
-        let favorites = repository.favorites()
-        if favorites.isEmpty {
-            return repository.personalAffirmations().prefix(10).map { entity(for: $0, origin: .personal) }
-        }
-        return favorites.prefix(10).map { entity(for: $0, origin: .favorite) }
+        return selectedPool().prefix(15).map { entity(for: $0) }
     }
 
     func entities(matching string: String) async throws -> [AffirmationEntity] {
         guard !string.isEmpty else { return try await suggestedEntities() }
-        let pool = repository.allAffirmations() + repository.personalAffirmations()
-        return pool
+        return selectedPool()
             .filter { $0.text.localizedCaseInsensitiveContains(string) }
             .prefix(15)
             .map { entity(for: $0) }
+    }
+
+    private func selectedPool() -> [Affirmation] {
+        let favorites = repository.source(.favorites, fallbackToAll: false)
+        let personal = repository.source(.personal, fallbackToAll: false)
+        var seen = Set<UUID>()
+        var combined: [Affirmation] = []
+
+        for affirmation in favorites + personal {
+            if seen.insert(affirmation.id).inserted {
+                combined.append(affirmation)
+            }
+        }
+        return combined
     }
 
     private func entity(for affirmation: Affirmation, origin: AffirmationEntity.Origin? = nil) -> AffirmationEntity {

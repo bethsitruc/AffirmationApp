@@ -16,17 +16,14 @@ struct WidgetAffirmationRepository {
     }
 
     @available(iOSApplicationExtension 17.0, *)
-    func source(_ source: AffirmationWidgetContentSource) -> [Affirmation] {
+    func source(_ source: AffirmationWidgetContentSource, fallbackToAll: Bool = true) -> [Affirmation] {
         switch source {
         case .favorites:
             let favs = favorites()
-            return favs.isEmpty ? allAffirmations() : favs
+            return (favs.isEmpty && fallbackToAll) ? allAffirmations() : favs
         case .personal:
             let mine = personalAffirmations()
-            return mine.isEmpty ? allAffirmations() : mine
-        case .all:
-            let combined = allAffirmations() + personalAffirmations()
-            return combined.isEmpty ? AffirmationSeeds.all : combined
+            return (mine.isEmpty && fallbackToAll) ? allAffirmations() : mine
         }
     }
 

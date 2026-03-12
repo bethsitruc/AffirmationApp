@@ -45,7 +45,7 @@ class AffirmationStore: ObservableObject {
     /// Persists built-in affirmations to the shared defaults and refreshes widgets.
     private func saveAffirmations() {
         if let data = try? JSONEncoder().encode(affirmations) {
-            _ = SharedDefaults.set(data, forKey: key)
+            SharedDefaults.set(data, forKey: key)
 #if !os(macOS)
             WidgetCenter.shared.reloadAllTimelines()
 #endif
@@ -88,7 +88,7 @@ class AffirmationStore: ObservableObject {
     /// Persists user-submitted affirmations to the shared defaults and refreshes widgets.
     private func saveUserSubmittedAffirmations() {
         if let data = try? JSONEncoder().encode(userSubmittedAffirmations) {
-            _ = SharedDefaults.set(data, forKey: userKey)
+            SharedDefaults.set(data, forKey: userKey)
 #if !os(macOS)
             WidgetCenter.shared.reloadAllTimelines()
 #endif

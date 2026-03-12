@@ -1,31 +1,44 @@
-# AffirmationApp
+# Grounded: Affirmations App
 
-Affirmation App is a fun and motivating app that aims to incorporate AI to generate new positive quotes and affirmations regularly. While the goal is to provide fresh, uplifting affirmations powered by AI, the current version is quite basic but still delivers a variety of positive quotes to keep you inspired each day.
+Grounded helps users save, favorite, and share daily encouragement with lightweight widgets.
 
-## Features
-- **Apple Foundation Model Suggestions (iOS 18+)**: Ask Apple Intelligence for a concise first-person affirmation, optionally guiding tone and theme. When Apple Intelligence is unavailable the app gracefully falls back to the affirmations.dev API and local seeds.
-- **Favorite Your Affirmations**: Users can favorite affirmations they love, and view them easily.
-- **Home Screen Widget**: Display a favorite affirmation directly on your home screen! You can choose to show a single affirmation or have it rotate through your favorites.
-- **Regular Updates**: New affirmations are generated regularly to keep the content fresh and engaging.
+## Current Behavior
+- **Home feed refresh** uses ZenQuotes (with local filtering for uplifting tone) plus local fallback content.
+- **Apple Intelligence** is only used when a user taps Generate while creating an affirmation.
+- **Widgets** support two configurations:
+  - **Grounded Affirmation**: pin one favorite/personal affirmation.
+  - **Grounded Shuffle**: rotate by source, hourly.
 
-## App Store blurb & widget instructions
-Use this copy for the App Store “What’s New” or description to keep onboarding outside the Home tab:
+## App Store Metadata (Quick Pass)
 
-> **How to add the widget**
-> 1. Long‑press the Home Screen and tap the **+** button.  
-> 2. Search for *AffirmationApp* and choose either **Affirmation** (pin one saying) or **Affirmation Shuffle** (auto-rotating).  
-> 3. Tap the widget once it’s placed to pick your source (Favorites, My Affirmations, or All), select a specific affirmation, font, and shuffle cadence.  
-> 4. Revisit the widget editor anytime to update the look.
->
-> **Need a refresher?** Open the app, tap the **i** button in the top right, and use “Reload Widget Timelines” to nudge updates.
+### Subtitle options
+- Daily quotes and affirmations
+- Grounded daily encouragement
+- Save, favorite, and share quotes
 
-## Apple Intelligence integration
-Apple’s Foundation Models framework (available on iOS/iPadOS 18+ / macOS 15+) now powers the “Ask Apple Intelligence” buttons on the Home tab and in the “Submit Affirmation” sheet. The integration works as follows:
+### Promotional text
+Grounded keeps encouragement simple: save favorites, add your own, and share beautiful affirmation cards. Add widgets to keep support visible all day.
 
-1. **On-device first** – We check `SystemLanguageModel.default.availability` and stream a short prompt through `LanguageModelSession` with guardrails that enforce inclusive, first‑person phrasing.
-2. **Clear feedback** – The UI surfaces the tone, optional theme, and whether the suggestion came from Apple Intelligence, the affirmations.dev API, or the deterministic local fallback.
-3. **Graceful fallbacks** – If Apple Intelligence isn’t enabled on the device (or you’re building on older SDKs) we automatically call the small affirmations.dev endpoint, and finally the local generator so users always get a result.
+### Description
+Grounded is a clean, calming way to keep encouragement close.
 
-> **Developer setup**
-> - Build with Xcode 16+ (ships the `FoundationModels` framework) and run on iOS 18/macOS 15 simulators or devices with Apple Intelligence enabled under *Settings ▸ Siri & Language*.
-> - No API keys are required because the default `LanguageModelSession` uses on-device models. The HTTP fallback only touches `https://www.affirmations.dev/`.
+- Read uplifting quotes refreshed regularly.
+- Save favorites and create your own affirmations.
+- Use Apple Intelligence to draft a new affirmation when you want help writing one.
+- Share beautifully styled quote cards.
+- Add Home Screen widgets for quick daily support.
+
+Grounded is designed to stay lightweight, private-minded, and easy to use.
+
+### Keywords
+affirmations,quotes,motivation,mindfulness,self care,wellness,gratitude,mental health,daily quote,widgets
+
+### What’s New template
+- Added ZenQuotes-powered home feed refresh with uplifting quote filtering.
+- Improved widget setup and readability.
+- Updated settings and About copy for a clearer, faster onboarding flow.
+
+## Release Notes / Compliance Reminders
+- Keep this support contact in App Store Connect: `bethanycurtis.builds@gmail.com`
+- Include quote attribution in metadata/help:
+  - `Quotes provided by ZenQuotes (https://zenquotes.io)`

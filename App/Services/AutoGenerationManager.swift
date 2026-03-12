@@ -5,7 +5,8 @@ import AffirmationShared
 
 @MainActor
 final class AutoGenerationManager {
-    private let generator = AffirmationGenerator()
+    private let fetcher = FreshAffirmationFetcher()
+    private let fallback = LocalGenerator()
 
     func runIfNeeded(store: AffirmationStore) async {
         let cadence = AutoGenerationPreferences.cadence
@@ -16,12 +17,19 @@ final class AutoGenerationManager {
             return
         }
 
-        let result = await generator.generate(theme: nil)
+        let text: String
+        if let fetched = await fetcher.fetch() {
+            text = fetched
+        } else if let local = try? await fallback.generate(theme: nil) {
+            text = local
+        } else {
+            text = "You are enough."
+        }
         store.addUserAffirmation(
-            text: result.text,
+            text: text,
             themes: [],
             isUserCreated: true,
-            isAIGenerated: result.source == .foundationModel
+            isAIGenerated: false
         )
         AutoGenerationPreferences.lastGeneratedDate = now
     }
@@ -29,13 +37,10 @@ final class AutoGenerationManager {
 
 @MainActor
 final class HomeFeedRefreshManager {
-    private let generator = AffirmationGenerator()
+    private let fetcher = FreshAffirmationFetcher()
+    private let fallback = LocalGenerator()
     private let batchSize = 10
     private let maxHomeAffirmations = 80
-    private let themePool: [String] = [
-        "self-worth", "confidence", "motivation", "growth",
-        "optimism", "kindness", "resilience", "gratitude"
-    ]
 
     func refreshIfNeeded(store: AffirmationStore) async {
         let cadence = HomeFeedRefreshPreferences.cadence
@@ -46,34 +51,35 @@ final class HomeFeedRefreshManager {
             return
         }
 
-        let results = await generateBatch(count: batchSize)
-        apply(results, to: store)
+        let quotes = await fetchBatch(count: batchSize)
+        apply(quotes, to: store)
         HomeFeedRefreshPreferences.lastRefreshDate = Date()
     }
 
-    private func generateBatch(count: Int) async -> [AffirmationGenerator.Result] {
-        var entries: [AffirmationGenerator.Result] = []
-        for index in 0..<count {
-            let theme = themePool.isEmpty ? nil : themePool[index % themePool.count]
-            let tone = AffirmationGenerator.Tone.allCases[index % AffirmationGenerator.Tone.allCases.count]
-            let result = await generator.generate(theme: theme, tone: tone)
-            entries.append(result)
+    private func fetchBatch(count: Int) async -> [String] {
+        var entries = await fetcher.fetchBatch(limit: max(50, count), includeAuthor: true)
+
+        while entries.count < count {
+            let local = (try? await fallback.generate(theme: nil)) ?? "You are enough."
+            if !entries.contains(local) {
+                entries.append(local)
+            }
         }
-        return entries
+        return Array(entries.prefix(count))
     }
 
-    private func apply(_ results: [AffirmationGenerator.Result], to store: AffirmationStore) {
-        removeOutdatedEntries(from: store, maximum: results.count)
+    private func apply(_ quotes: [String], to store: AffirmationStore) {
+        removeOutdatedEntries(from: store, maximum: quotes.count)
 
         let timestamp = Date()
-        let newAffirmations: [Affirmation] = results.enumerated().map { offset, result in
+        let newAffirmations: [Affirmation] = quotes.enumerated().map { offset, quote in
             Affirmation(
-                text: result.text,
+                text: quote,
                 isFavorite: false,
                 isUserCreated: false,
-                themes: result.metadata.theme.map { [$0] } ?? [],
+                themes: [],
                 createdAt: timestamp.addingTimeInterval(Double(offset) * 0.5),
-                isAIGenerated: result.source == .foundationModel
+                isAIGenerated: false
             )
         }
 

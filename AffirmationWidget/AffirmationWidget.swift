@@ -12,7 +12,6 @@ struct AffirmationWidgetEntry: TimelineEntry {
 }
 
 @available(iOSApplicationExtension 17.0, *)
-@available(iOSApplicationExtension 17.0, *)
 struct AffirmationWidgetProvider<Intent: AffirmationWidgetConfigurationIntent>: AppIntentTimelineProvider {
     private let repository = WidgetAffirmationRepository()
 
@@ -57,7 +56,10 @@ struct AffirmationWidgetProvider<Intent: AffirmationWidgetConfigurationIntent>: 
     }
 
     private func resolveText(for configuration: Intent, isSnapshot: Bool) -> String {
-        let sourceAffirmations = repository.source(configuration.source ?? .favorites)
+        let sourceAffirmations = repository.source(
+            configuration.resolvedSource,
+            fallbackToAll: false
+        )
 
         switch configuration.widgetMode {
         case .specific:
@@ -68,7 +70,7 @@ struct AffirmationWidgetProvider<Intent: AffirmationWidgetConfigurationIntent>: 
             if let first = sourceAffirmations.first {
                 return first.text
             }
-            return "Add an affirmation"
+            return "Pick a favorite or personal affirmation"
         case .shuffle:
             let pool = sourceAffirmations
             if let random = pool.randomElement() {
@@ -97,37 +99,23 @@ struct WidgetColorTheme {
 struct AffirmationWidgetEntryView: View {
     @Environment(\.widgetFamily) private var family
     @Environment(\.widgetRenderingMode) private var renderingMode
+    @Environment(\.showsWidgetContainerBackground) private var showsWidgetContainerBackground
     var entry: AffirmationWidgetEntry
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                backgroundLayer
-                textContent(for: family)
-                    .padding(layoutPadding(for: family))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        ZStack(alignment: .leading) {
+            if !showsWidgetContainerBackground {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(entry.theme.background.opacity(isFullColorRendering ? 1 : 0.9))
             }
+
+            textContent(for: family)
+                .padding(layoutPadding(for: family))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         }
         .tint(entry.theme.accent)
         .containerBackground(for: .widget) {
-            containerBackgroundLayer
-        }
-    }
-
-    private var backgroundLayer: some View {
-        Group {
-            if usesFullColorRendering {
-                entry.theme.background
-            } else {
-                Color.clear
-            }
-        }
-        .ignoresSafeArea()
-    }
-
-    private var containerBackgroundLayer: some View {
-        Group {
-            if usesFullColorRendering {
+            if isFullColorRendering {
                 entry.theme.background
             } else {
                 Color.clear
@@ -140,30 +128,76 @@ struct AffirmationWidgetEntryView: View {
         switch family {
         case .systemMedium:
             HStack(alignment: .center, spacing: 16) {
-                textStack(fontSize: 26)
+                adaptiveTextStack(for: family)
                 Spacer(minLength: 0)
             }
         case .systemLarge:
             VStack(alignment: .leading, spacing: 16) {
-                textStack(fontSize: 30)
+                adaptiveTextStack(for: family)
                 Spacer(minLength: 0)
             }
         default:
             VStack(alignment: .leading, spacing: 8) {
-                textStack(fontSize: 22)
+                adaptiveTextStack(for: family)
             }
         }
     }
 
-    private func textStack(fontSize: CGFloat) -> some View {
+    @ViewBuilder
+    private func adaptiveTextStack(for family: WidgetFamily) -> some View {
+        ViewThatFits(in: .vertical) {
+            ForEach(fontCandidates(for: family), id: \.self) { size in
+                textStack(
+                    fontSize: size,
+                    lineLimit: fallbackLineLimit(for: family)
+                )
+            }
+            textStack(
+                fontSize: minimumFont(for: family),
+                lineLimit: fallbackLineLimit(for: family)
+            )
+        }
+    }
+
+    private func textStack(fontSize: CGFloat, lineLimit: Int) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(entry.text)
                 .font(contentFont(for: fontSize))
                 .foregroundStyle(contentStyleColor)
                 .multilineTextAlignment(.leading)
                 .minimumScaleFactor(0.6)
-                .lineLimit(7)
-                .widgetAccentable()
+                .allowsTightening(true)
+                .lineLimit(lineLimit)
+        }
+    }
+
+    private func fontCandidates(for family: WidgetFamily) -> [CGFloat] {
+        switch family {
+        case .systemSmall:
+            return [22, 20, 18, 16, 15, 14, 13]
+        case .systemMedium:
+            return [26, 24, 22, 20, 18, 16, 15, 14]
+        case .systemLarge:
+            return [30, 28, 26, 24, 22, 20, 18, 16]
+        default:
+            return [22, 20, 18, 16, 15, 14]
+        }
+    }
+
+    private func minimumFont(for family: WidgetFamily) -> CGFloat {
+        fontCandidates(for: family).last ?? 14
+    }
+
+    private func fallbackLineLimit(for family: WidgetFamily) -> Int {
+        switch family {
+        case .systemSmall:
+            return 10
+        case .systemMedium:
+            return 14
+        case .systemLarge:
+            return 20
+        default:
+            return 12
         }
     }
 
@@ -186,16 +220,16 @@ struct AffirmationWidgetEntryView: View {
         }
     }
 
-    private var usesFullColorRendering: Bool {
-        renderingMode == .fullColor
+    private var contentStyleColor: AnyShapeStyle {
+        if isFullColorRendering {
+            AnyShapeStyle(entry.theme.text)
+        } else {
+            AnyShapeStyle(.primary)
+        }
     }
 
-    private var contentStyleColor: AnyShapeStyle {
-        if usesFullColorRendering {
-            return AnyShapeStyle(entry.theme.text)
-        } else {
-            return AnyShapeStyle(.tint)
-        }
+    private var isFullColorRendering: Bool {
+        renderingMode == .fullColor
     }
 }
 
@@ -233,7 +267,7 @@ struct AffirmationSpecificWidget: Widget {
             AffirmationWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Grounded Affirmation")
-        .description("Pin a specific favorite or personal affirmation to your Home Screen.")
+        .description("Pin one favorite or personal affirmation.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
@@ -247,7 +281,7 @@ struct AffirmationShuffleWidget: Widget {
             AffirmationWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Grounded Shuffle")
-        .description("Rotate through your affirmations automatically on the Home Screen.")
+        .description("Rotate favorites or personal affirmations.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

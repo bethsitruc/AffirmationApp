@@ -614,10 +614,15 @@ struct MainAffirmationView: View {
         NavigationView {
             List {
                 Section(header: Text("About Grounded: Affirmations App").foregroundColor(appearance.theme.secondaryText)) {
-                    Text("Grounded: Affirmations App keeps your favorite encouragement close by. Save personal entries, favorite built-ins, and ask Apple Intelligence to suggest fresh phrases when you need them.")
+                    Text("Grounded keeps encouragement simple: save favorites, add your own, and share cards.")
                         .font(.body)
                         .foregroundColor(.primary)
-                    Text("Questions? bethanycurtis.builds@gmail.com")
+                    Text("Apple Intelligence is only used when you tap Generate while creating an affirmation.")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                    Link("ZenQuotes Attribution", destination: URL(string: "https://zenquotes.io")!)
+                        .font(.footnote)
+                    Text("Support: bethanycurtis.builds@gmail.com")
                         .font(.footnote)
                         .foregroundColor(.secondary)
                 }
@@ -625,15 +630,15 @@ struct MainAffirmationView: View {
                 Section(header: Text("Using The Home Widget").foregroundColor(appearance.theme.secondaryText)) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("1. Long-press the Home Screen and tap the + button.")
-                        Text("2. Search for Grounded and choose either **Affirmation** (specific) or **Affirmation Shuffle**.")
-                        Text("3. Tap the widget once it’s placed to pick the source, exact affirmation, and shuffle cadence. Colors and typography follow your appearance settings.")
-                        Text("4. If things ever look stale, tap **Reload Widget Timelines** below.")
+                        Text("2. Search for Grounded and choose either **Grounded Affirmation** or **Grounded Shuffle**.")
+                        Text("3. **Grounded Affirmation** lets you pick one favorite or personal affirmation.")
+                        Text("4. **Grounded Shuffle** lets you pick a source and rotates hourly.")
                     }
                     .font(.body)
                 }
 
                 Section(header: Text("Apple Intelligence Tips").foregroundColor(appearance.theme.secondaryText)) {
-                    Text("Use the ✨ Generate button to draft new affirmations with Apple’s on-device models. You can set a focus, tone, and context note—generated entries land in **My Affirmations** so you can edit or favorite them later.")
+                    Text("Use ✨ Generate to draft affirmations while creating one. Home feed refresh uses ZenQuotes instead.")
                 }
 
                 Section(header: Text("Need A Refresh?").foregroundColor(appearance.theme.secondaryText)) {
