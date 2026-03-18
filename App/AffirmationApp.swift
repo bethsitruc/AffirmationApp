@@ -24,6 +24,18 @@ struct AffirmationApp: App {
 
     // Use a small helper that fetches a fresh affirmation asynchronously.
     private let fetcher = FreshAffirmationFetcher()
+
+    init() {
+        if ProcessInfo.processInfo.arguments.contains("-ui-testing-reset-state") {
+            let keysToReset = [
+                UserDefaults.Keys.latestAffirmation,
+                UserDefaults.Keys.latestAffirmationFetchedAt,
+                UserDefaults.Keys.affirmations,
+                UserDefaults.Keys.userSubmittedAffirmations,
+            ]
+            keysToReset.forEach { SharedDefaults.removeObject(forKey: $0) }
+        }
+    }
     
     var body: some Scene {
         WindowGroup {
@@ -33,6 +45,9 @@ struct AffirmationApp: App {
                 // Refresh the shared latest quote on a cadence so widgets stay fresh
                 // without hitting the quote API on every launch.
                 .task {
+                    guard !ProcessInfo.processInfo.arguments.contains("-ui-testing-disable-background-refresh") else {
+                        return
+                    }
                     if shouldRefreshLatestAffirmation {
                         if let text = await fetcher.fetch() {
                             SharedDefaults.set(text, forKey: UserDefaults.Keys.latestAffirmation)

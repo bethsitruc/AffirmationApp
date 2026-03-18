@@ -1,6 +1,4 @@
-import Testing
 @testable import AffirmationShared
 
-@Test func example() async throws {
-    // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-}
+// Shared package behavior is exercised through the app test target so it can run
+// in the same simulator-backed release pipeline as the app and widget code.

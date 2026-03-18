@@ -68,6 +68,7 @@ struct SubmitAffirmationView: View {
                 Section(header: Text("Your Affirmation").foregroundColor(appearance.theme.secondaryText)) {
                     TextEditor(text: $text)
                         .frame(minHeight: 100)
+                        .accessibilityIdentifier("submit-affirmation-editor")
                 }
 
                 // Button to submit the new affirmation
@@ -82,6 +83,7 @@ struct SubmitAffirmationView: View {
                     Text("Submit Affirmation")
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
+                .accessibilityIdentifier("submit-affirmation-confirm-button")
                 .buttonStyle(DS.PrimaryPillButtonStyle(prominent: true))
             }
             .navigationTitle("Submit Affirmation")

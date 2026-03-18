@@ -118,6 +118,11 @@
 			path = Tests;
 			sourceTree = "<group>";
 		};
+		1D8C2C8C2FF9000100A1B2C3 /* UITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = UITests;
+			sourceTree = "<group>";
+		};
 		1D655C412DA041AC00CEBEFC /* AffirmationWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -171,6 +176,7 @@
 				1D11090F2E953E100095EE16 /* App */,
 				1D8E4E3F2DA0659700ED37AE /* AffirmationWidgetExtension.entitlements */,
 				1D655C172DA0405400CEBEFC /* Tests */,
+				1D8C2C8C2FF9000100A1B2C3 /* UITests */,
 				1D655C412DA041AC00CEBEFC /* AffirmationWidget */,
 				1D655C3C2DA041AC00CEBEFC /* Frameworks */,
 				1D655C072DA0405300CEBEFC /* Products */,
@@ -261,6 +267,9 @@
 			);
 			dependencies = (
 				1D655C202DA0405400CEBEFC /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				1D8C2C8C2FF9000100A1B2C3 /* UITests */,
 			);
 			name = AffirmationAppUITests;
 			packageProductDependencies = (

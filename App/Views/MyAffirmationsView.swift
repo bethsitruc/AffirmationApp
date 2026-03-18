@@ -32,6 +32,7 @@ struct MyAffirmationsView: View {
                             Label("Submit Your Own Affirmation", systemImage: "plus.circle")
                                 .frame(maxWidth: .infinity)
                         }
+                        .accessibilityIdentifier("submit-own-affirmation-button")
                         .buttonStyle(DS.PrimaryPillButtonStyle(prominent: true))
                     }
                     .padding(.horizontal, DS.Layout.tilePadding)
