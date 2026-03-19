@@ -38,7 +38,10 @@ struct MyAffirmationsView: View {
                     .padding(.horizontal, DS.Layout.tilePadding)
 
                     UserSubmittedSection(store: store)
+                        .padding(.horizontal, DS.Layout.tilePadding)
                 }
+                .frame(maxWidth: 980)
+                .frame(maxWidth: .infinity)
                 .padding(.top, DS.Layout.tilePadding)
                 .padding(.bottom, DS.Layout.tilePadding)
             }
@@ -73,6 +76,9 @@ struct MyAffirmationsView: View {
 private struct UserSubmittedSection: View {
     @ObservedObject var store: AffirmationStore
     @EnvironmentObject private var appearance: AppearanceSettings
+    private let columns = [
+        GridItem(.adaptive(minimum: 320, maximum: 420), spacing: DS.Layout.tilePadding)
+    ]
 
     var body: some View {
         if store.userSubmittedAffirmations.isEmpty {
@@ -88,40 +94,51 @@ private struct UserSubmittedSection: View {
             }
             .frame(maxWidth: .infinity, minHeight: 220)
         } else {
-            // Use LazyVStack so the parent ScrollView handles scrolling
-            LazyVStack(spacing: DS.Layout.tilePadding) {
-                // Display all user-submitted affirmations
-                ForEach(store.userSubmittedAffirmations) { affirmation in
-                    Section {
-                        // Tapping a tile navigates to the edit view
-                        NavigationLink(destination: EditAffirmationView(affirmation: affirmation, store: store)) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(affirmation.text)
-                                    .font(appearance.font.font(size: 22))
-                                    .foregroundColor(appearance.theme.primaryText)
-                                    .multilineTextAlignment(.leading)
-
-                                if affirmation.isFavorite {
-                                    Image(systemName: "heart.fill")
-                                        .foregroundColor(appearance.theme.accentColor)
-                                }
-
-                                Label(affirmation.isAIGenerated ? "Apple Intelligence" : "User Submitted",
-                                      systemImage: affirmation.isAIGenerated ? "sparkles" : "person.crop.circle.badge.plus")
-                                    .font(.footnote)
-                                    .foregroundColor(affirmation.isAIGenerated ? appearance.theme.accentColor : appearance.theme.secondaryText)
-                            }
-                            .padding(DS.Layout.compactTilePadding)
-                            .frame(maxWidth: 300)
-                            .background(tileColor(for: affirmation))
-                            .cornerRadius(DS.Layout.cornerRadius)
-                            .shadow(color: appearance.theme.primaryText.opacity(0.08), radius: DS.Layout.tileShadowRadius, x: 0, y: 4)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
+            if store.userSubmittedAffirmations.count == 1, let affirmation = store.userSubmittedAffirmations.first {
+                affirmationCard(for: affirmation)
+                    .frame(maxWidth: 760)
+                    .frame(maxWidth: .infinity)
+            } else {
+                LazyVGrid(columns: columns, spacing: DS.Layout.tilePadding) {
+                    ForEach(store.userSubmittedAffirmations) { affirmation in
+                        affirmationCard(for: affirmation)
+                            .frame(maxWidth: .infinity, minHeight: 220, alignment: .topLeading)
                     }
                 }
             }
         }
+    }
+
+    private func affirmationCard(for affirmation: Affirmation) -> some View {
+        NavigationLink(destination: EditAffirmationView(affirmation: affirmation, store: store)) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(affirmation.text)
+                    .font(appearance.font.font(size: 22))
+                    .foregroundColor(appearance.theme.primaryText)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Spacer(minLength: 0)
+
+                if affirmation.isFavorite {
+                    Image(systemName: "heart.fill")
+                        .foregroundColor(appearance.theme.accentColor)
+                }
+
+                Label(
+                    affirmation.isAIGenerated ? "Apple Intelligence" : "User Submitted",
+                    systemImage: affirmation.isAIGenerated ? "sparkles" : "person.crop.circle.badge.plus"
+                )
+                .font(.footnote)
+                .foregroundColor(affirmation.isAIGenerated ? appearance.theme.accentColor : appearance.theme.secondaryText)
+            }
+            .padding(DS.Layout.compactTilePadding)
+            .frame(maxWidth: .infinity, minHeight: 220, alignment: .topLeading)
+            .background(tileColor(for: affirmation))
+            .cornerRadius(DS.Layout.cornerRadius)
+            .shadow(color: appearance.theme.primaryText.opacity(0.08), radius: DS.Layout.tileShadowRadius, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
     }
 
     // Generates a background color for tiles based on text hash

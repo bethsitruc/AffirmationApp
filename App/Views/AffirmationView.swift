@@ -97,11 +97,6 @@ struct MainAffirmationView: View {
     @State private var showSharePicker = false
     //@State private var showingSurprise = false
 
-    // Defines the adaptive grid column layout for short affirmations.
-    let columns = [
-        GridItem(.adaptive(minimum: 150), spacing: DS.Layout.tilePadding)
-    ]
-    
     /// Returns the deterministic "Affirmation of the Day".
     /// Uses the day of the month as a seed to always show the same affirmation for a given day.
     /// `SeededGenerator` ensures the selection is repeatable each day.
@@ -222,8 +217,7 @@ struct MainAffirmationView: View {
                     } shareAction: {
                         shareTarget = item
                     }
-                    .frame(minHeight: 120)
-                    .padding(Edge.Set.horizontal)
+                    .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
                     // Infinite scroll: load more when last tile appears.
                     .onAppear {
                         if item == affirmations.last {
@@ -239,26 +233,35 @@ struct MainAffirmationView: View {
                 let pair = affirmations[index..<min(index + 2, affirmations.count)].filter { $0.text.count < 50 }
 
                 if pair.count == 2 {
-                    let view = AnyView(
-                        LazyVGrid(columns: columns, spacing: 20) {
-                            ForEach(pair, id: \.id) { affirmation in
-                                AffirmationTileView(
-                                    affirmation: affirmation,
-                                    isUserSubmitted: affirmation.isUserCreated,
-                                    style: .compact
-                                ) {
-                                    withAnimation { store.toggleFavorite(for: affirmation) }
-                                } shareAction: {
-                                    shareTarget = affirmation
-                                }
-                                .frame(minHeight: 120)
-                                .padding(4)
-                                .onAppear {
-                                    if affirmation == affirmations.last {
-                                        displayedCount += 6
-                                    }
-                                }
+                    let pairedTiles = ForEach(pair, id: \.id) { affirmation in
+                        AffirmationTileView(
+                            affirmation: affirmation,
+                            isUserSubmitted: affirmation.isUserCreated,
+                            style: .compact
+                        ) {
+                            withAnimation { store.toggleFavorite(for: affirmation) }
+                        } shareAction: {
+                            shareTarget = affirmation
+                        }
+                        .frame(minWidth: 220, maxWidth: .infinity, minHeight: 120, alignment: .leading)
+                        .onAppear {
+                            if affirmation == affirmations.last {
+                                displayedCount += 6
                             }
+                        }
+                    }
+
+                    let view = AnyView(
+                        ViewThatFits(in: .horizontal) {
+                            HStack(alignment: .top, spacing: DS.Layout.tilePadding) {
+                                pairedTiles
+                            }
+                            .frame(maxWidth: .infinity)
+
+                            VStack(spacing: DS.Layout.tilePadding) {
+                                pairedTiles
+                            }
+                            .frame(maxWidth: .infinity)
                         }
                     )
                     rows.append(view)
@@ -276,8 +279,7 @@ struct MainAffirmationView: View {
                             } shareAction: {
                                 shareTarget = single
                             }
-                            .frame(minHeight: 120)
-                            .padding(Edge.Set.horizontal)
+                            .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
                             .onAppear {
                                 if single == affirmations.last {
                                     displayedCount += 6
@@ -299,6 +301,7 @@ struct MainAffirmationView: View {
                 rowView
             }
         }
+        .frame(maxWidth: .infinity)
         .padding(DS.Layout.tilePadding)
     }
 
@@ -453,6 +456,8 @@ struct MainAffirmationView: View {
                         affirmationRows
                     }
                 }
+                .frame(maxWidth: 980)
+                .frame(maxWidth: .infinity)
                 .padding(.top, DS.Layout.tilePadding * 1.2)
                 .padding(.bottom, DS.Layout.tilePadding)
             }

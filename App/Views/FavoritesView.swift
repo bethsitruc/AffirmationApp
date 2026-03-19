@@ -38,12 +38,14 @@ struct FavoritesView: View {
                         LazyVGrid(columns: [GridItem(.flexible())], spacing: DS.Layout.tilePadding) {
                             ForEach(favorites) { affirmation in
                                 FavoriteTileView(affirmation: affirmation, store: store)
-                                    .frame(minHeight: 120)
+                                    .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
                             }
                         }
                         .padding(.horizontal, DS.Layout.tilePadding)
                     }
                 }
+                .frame(maxWidth: 980)
+                .frame(maxWidth: .infinity)
                 .padding(.top, DS.Layout.tilePadding)
                 .padding(.bottom, DS.Layout.tilePadding)
             }

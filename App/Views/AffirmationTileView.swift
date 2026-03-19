@@ -125,6 +125,7 @@ struct AffirmationTileView: View {
             } else {
                 core
                     .padding(style == .featured ? DS.Layout.featuredTilePadding : DS.Layout.compactTilePadding)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Layout.cornerRadius, style: .continuous)
                             .fill(theme.cardBackground)
