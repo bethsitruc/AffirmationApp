@@ -31,26 +31,26 @@ public enum AutoGenerationPreferences {
     public static var cadence: AutoGenerationCadence {
         get {
             guard
-                let string = SharedDefaults.string(forKey: cadenceKey),
+                let string = CloudPreferenceStore.string(forKey: cadenceKey),
                 let value = AutoGenerationCadence(rawValue: string)
             else { return .off }
             return value
         }
         set {
-            SharedDefaults.set(newValue.rawValue, forKey: cadenceKey)
+            CloudPreferenceStore.set(newValue.rawValue, forKey: cadenceKey)
         }
     }
 
     public static var lastGeneratedDate: Date? {
         get {
-            let interval = SharedDefaults.double(forKey: lastKey)
+            let interval = CloudPreferenceStore.double(forKey: lastKey)
             return interval == 0 ? nil : Date(timeIntervalSince1970: interval)
         }
         set {
             if let value = newValue {
-                SharedDefaults.set(value.timeIntervalSince1970, forKey: lastKey)
+                CloudPreferenceStore.set(value.timeIntervalSince1970, forKey: lastKey)
             } else {
-                SharedDefaults.removeObject(forKey: lastKey)
+                CloudPreferenceStore.removeObject(forKey: lastKey)
             }
         }
     }
@@ -63,26 +63,26 @@ public enum HomeFeedRefreshPreferences {
     public static var cadence: AutoGenerationCadence {
         get {
             guard
-                let raw = SharedDefaults.string(forKey: cadenceKey),
+                let raw = CloudPreferenceStore.string(forKey: cadenceKey),
                 let value = AutoGenerationCadence(rawValue: raw)
             else { return .weekly }
             return value
         }
         set {
-            SharedDefaults.set(newValue.rawValue, forKey: cadenceKey)
+            CloudPreferenceStore.set(newValue.rawValue, forKey: cadenceKey)
         }
     }
 
     public static var lastRefreshDate: Date? {
         get {
-            let interval = SharedDefaults.double(forKey: lastKey)
+            let interval = CloudPreferenceStore.double(forKey: lastKey)
             return interval == 0 ? nil : Date(timeIntervalSince1970: interval)
         }
         set {
             if let value = newValue {
-                SharedDefaults.set(value.timeIntervalSince1970, forKey: lastKey)
+                CloudPreferenceStore.set(value.timeIntervalSince1970, forKey: lastKey)
             } else {
-                SharedDefaults.removeObject(forKey: lastKey)
+                CloudPreferenceStore.removeObject(forKey: lastKey)
             }
         }
     }

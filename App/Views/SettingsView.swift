@@ -57,6 +57,12 @@ struct SettingsView: View {
             }
         )
         .navigationTitle("Settings")
+        .onReceive(NotificationCenter.default.publisher(for: .cloudPreferencesDidChange)) { _ in
+            homeRefreshCadence = HomeFeedRefreshPreferences.cadence
+        }
+        .onAppear {
+            homeRefreshCadence = HomeFeedRefreshPreferences.cadence
+        }
     }
 
     @ViewBuilder

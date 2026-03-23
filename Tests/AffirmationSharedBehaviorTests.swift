@@ -115,7 +115,10 @@ struct SharedPreferencesTests {
     }
 
     private func clearPreferences() {
-        keys.forEach { SharedDefaults.removeObject(forKey: $0) }
+        keys.forEach {
+            SharedDefaults.removeObject(forKey: $0)
+            CloudPreferenceStore.removeObject(forKey: $0)
+        }
     }
 }
 
@@ -169,9 +172,18 @@ private struct SharedPreferencesSnapshot {
     func restore() {
         for key in missingKeys {
             SharedDefaults.removeObject(forKey: key)
+            CloudPreferenceStore.removeObject(forKey: key)
         }
         for (key, value) in entries {
             SharedDefaults.set(value, forKey: key)
+            switch value {
+            case let string as String:
+                CloudPreferenceStore.set(string, forKey: key)
+            case let number as NSNumber:
+                CloudPreferenceStore.set(number.doubleValue, forKey: key)
+            default:
+                break
+            }
         }
     }
 }

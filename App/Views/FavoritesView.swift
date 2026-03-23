@@ -96,11 +96,7 @@ private struct FavoriteTileView: View {
     // Centralized removal logic with animation
     private func removeFavorite() {
         withAnimation {
-            if let idx = store.affirmations.firstIndex(of: affirmation) {
-                store.affirmations[idx].isFavorite.toggle()
-            } else if let uidx = store.userSubmittedAffirmations.firstIndex(where: { $0.id == affirmation.id }) {
-                store.userSubmittedAffirmations[uidx].isFavorite.toggle()
-            }
+            store.toggleFavorite(for: affirmation)
         }
     }
 

@@ -6,11 +6,25 @@ import WidgetKit
 final class AppearanceSettings: ObservableObject {
     @Published private(set) var theme: AffirmationColorTheme
     @Published private(set) var font: AffirmationFontPreference
+    private var cloudObserver: NSObjectProtocol?
 
     init(theme: AffirmationColorTheme = AppearancePreferences.theme,
          font: AffirmationFontPreference = AppearancePreferences.font) {
         self.theme = theme
         self.font = font
+        cloudObserver = NotificationCenter.default.addObserver(
+            forName: .cloudPreferencesDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.syncFromDefaults()
+        }
+    }
+
+    deinit {
+        if let cloudObserver {
+            NotificationCenter.default.removeObserver(cloudObserver)
+        }
     }
 
     func updateTheme(_ theme: AffirmationColorTheme) {

@@ -21,26 +21,26 @@ public enum AppearancePreferences {
     public static var theme: AffirmationColorTheme {
         get {
             guard
-                let stored = SharedDefaults.string(forKey: themeKey),
+                let stored = CloudPreferenceStore.string(forKey: themeKey),
                 let value = AffirmationColorTheme(rawValue: stored)
             else { return .sage }
             return value
         }
         set {
-            SharedDefaults.set(newValue.rawValue, forKey: themeKey)
+            CloudPreferenceStore.set(newValue.rawValue, forKey: themeKey)
         }
     }
 
     public static var font: AffirmationFontPreference {
         get {
             guard
-                let stored = SharedDefaults.string(forKey: fontKey),
+                let stored = CloudPreferenceStore.string(forKey: fontKey),
                 let value = AffirmationFontPreference(rawValue: stored)
             else { return .serif }
             return value
         }
         set {
-            SharedDefaults.set(newValue.rawValue, forKey: fontKey)
+            CloudPreferenceStore.set(newValue.rawValue, forKey: fontKey)
         }
     }
 }

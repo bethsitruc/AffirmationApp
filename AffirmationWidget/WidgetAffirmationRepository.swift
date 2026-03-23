@@ -12,7 +12,7 @@ struct WidgetAffirmationRepository {
     }
 
     func favorites() -> [Affirmation] {
-        (allAffirmations() + personalAffirmations()).filter { $0.isFavorite }
+        loadAffirmations(forKey: UserDefaults.Keys.favoriteAffirmations, fallback: [])
     }
 
     @available(iOSApplicationExtension 17.0, *)
