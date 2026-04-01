@@ -17,7 +17,9 @@ final class AppearanceSettings: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.syncFromDefaults()
+            Task { @MainActor [weak self] in
+                self?.syncFromDefaults()
+            }
         }
     }
 

@@ -61,13 +61,19 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
                 favorites: remote.favorites,
                 tombstones: remote.tombstones
             )
+        } catch {
+            #if DEBUG
+            print("Cloud favorite fetch failed:", error.localizedDescription)
+            #endif
+        }
 
+        do {
             let localFavorites = store.favoriteAffirmationsForSync()
             let localTombstones = store.favoriteAffirmationTombstonesForSync()
             try await pushState(favorites: localFavorites, tombstones: localTombstones)
         } catch {
             #if DEBUG
-            print("Cloud favorite sync failed:", error.localizedDescription)
+            print("Cloud favorite push failed:", error.localizedDescription)
             #endif
         }
     }
@@ -161,7 +167,9 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
         record["favoriteStorageKey"] = affirmation.favoriteStorageKey as CKRecordValue
         record["id"] = affirmation.id.uuidString.lowercased() as CKRecordValue
         record["text"] = affirmation.text as CKRecordValue
-        record["themes"] = affirmation.themes as CKRecordValue
+        if !affirmation.themes.isEmpty {
+            record["themes"] = affirmation.themes as CKRecordValue
+        }
         record["createdAt"] = (affirmation.createdAt ?? affirmation.syncTimestamp) as CKRecordValue
         record["updatedAt"] = affirmation.syncTimestamp as CKRecordValue
         record["isUserCreated"] = affirmation.isUserCreated as CKRecordValue
@@ -177,7 +185,6 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
         record["favoriteStorageKey"] = tombstone.favoriteStorageKey as CKRecordValue
         record["id"] = tombstone.favoriteSyncID as CKRecordValue
         record["text"] = "" as CKRecordValue
-        record["themes"] = [] as CKRecordValue
         record["createdAt"] = tombstone.deletedAt as CKRecordValue
         record["updatedAt"] = tombstone.deletedAt as CKRecordValue
         record["isUserCreated"] = false as CKRecordValue

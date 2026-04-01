@@ -61,7 +61,13 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
                 affirmations: remote.affirmations,
                 tombstones: remote.tombstones
             )
+        } catch {
+            #if DEBUG
+            print("Cloud user affirmation fetch failed:", error.localizedDescription)
+            #endif
+        }
 
+        do {
             let localAffirmations = store.userSubmittedAffirmationsForSync()
             let localTombstones = store.userAffirmationTombstonesForSync()
             try await pushState(
@@ -70,7 +76,7 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
             )
         } catch {
             #if DEBUG
-            print("Cloud user affirmation sync failed:", error.localizedDescription)
+            print("Cloud user affirmation push failed:", error.localizedDescription)
             #endif
         }
     }
@@ -162,7 +168,9 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
         let recordID = CKRecord.ID(recordName: affirmation.id.uuidString.lowercased())
         let record = CKRecord(recordType: "UserAffirmation", recordID: recordID)
         record["text"] = affirmation.text as CKRecordValue
-        record["themes"] = affirmation.themes as CKRecordValue
+        if !affirmation.themes.isEmpty {
+            record["themes"] = affirmation.themes as CKRecordValue
+        }
         record["createdAt"] = (affirmation.createdAt ?? affirmation.syncTimestamp) as CKRecordValue
         record["updatedAt"] = affirmation.syncTimestamp as CKRecordValue
         record["isAIGenerated"] = affirmation.isAIGenerated as CKRecordValue
@@ -175,7 +183,6 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
         let recordID = CKRecord.ID(recordName: tombstone.id.uuidString.lowercased())
         let record = CKRecord(recordType: "UserAffirmation", recordID: recordID)
         record["text"] = "" as CKRecordValue
-        record["themes"] = [] as CKRecordValue
         record["createdAt"] = tombstone.deletedAt as CKRecordValue
         record["updatedAt"] = tombstone.deletedAt as CKRecordValue
         record["isAIGenerated"] = false as CKRecordValue
