@@ -54,6 +54,7 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
 
     private func syncOnce() async {
         guard let store else { return }
+        store.noteUserAffirmationSyncAttempt()
 
         do {
             let remote = try await fetchRemoteState()
@@ -62,6 +63,7 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
                 tombstones: remote.tombstones
             )
         } catch {
+            store.noteUserAffirmationSyncFailure(error)
             #if DEBUG
             print("Cloud user affirmation fetch failed:", error.localizedDescription)
             #endif
@@ -74,7 +76,9 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
                 affirmations: localAffirmations,
                 tombstones: localTombstones
             )
+            store.noteUserAffirmationSyncSuccess()
         } catch {
+            store.noteUserAffirmationSyncFailure(error)
             #if DEBUG
             print("Cloud user affirmation push failed:", error.localizedDescription)
             #endif

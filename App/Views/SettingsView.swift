@@ -3,6 +3,7 @@ import AffirmationShared
 
 struct SettingsView: View {
     @EnvironmentObject private var appearance: AppearanceSettings
+    @EnvironmentObject private var store: AffirmationStore
     @State private var homeRefreshCadence = HomeFeedRefreshPreferences.cadence
     private let zenQuotesURL = URL(string: "https://zenquotes.io")!
 
@@ -54,6 +55,26 @@ struct SettingsView: View {
                     Text("Support: bethanycurtis.builds@gmail.com")
                         .foregroundColor(.secondary)
                 }
+
+                Section("Sync Status") {
+                    SyncChannelDiagnosticsView(
+                        title: "User Affirmations",
+                        diagnostics: store.syncDiagnostics.userAffirmations,
+                        countLabel: "Local Count",
+                        countValue: store.userSubmittedAffirmations.count
+                    )
+
+                    SyncChannelDiagnosticsView(
+                        title: "Favorites",
+                        diagnostics: store.syncDiagnostics.favorites,
+                        countLabel: "Local Count",
+                        countValue: store.favoriteAffirmations().count
+                    )
+
+                    Button("Retry Sync") {
+                        store.refreshUserAffirmationSync()
+                    }
+                }
             }
         )
         .navigationTitle("Settings")
@@ -76,5 +97,30 @@ struct SettingsView: View {
                 HomeFeedRefreshPreferences.cadence = newValue
             }
         }
+    }
+}
+
+private struct SyncChannelDiagnosticsView: View {
+    let title: String
+    let diagnostics: SyncChannelDiagnostics
+    let countLabel: String
+    let countValue: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.headline)
+
+            LabeledContent(countLabel, value: "\(countValue)")
+            LabeledContent("Last Attempt", value: formatted(diagnostics.lastAttemptAt))
+            LabeledContent("Last Success", value: formatted(diagnostics.lastSuccessAt))
+            LabeledContent("Last Error", value: diagnostics.lastError ?? "None")
+        }
+        .font(.footnote)
+    }
+
+    private func formatted(_ date: Date?) -> String {
+        guard let date else { return "Never" }
+        return date.formatted(date: .abbreviated, time: .shortened)
     }
 }

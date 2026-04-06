@@ -48,6 +48,7 @@ class AffirmationStore: ObservableObject {
 
     // A randomly chosen affirmation for the "Surprise Me" feature
     @Published var surpriseAffirmation: Affirmation?
+    @Published private(set) var syncDiagnostics = SyncDiagnostics()
 
     private let key = UserDefaults.Keys.affirmations
     private let userKey = UserDefaults.Keys.userSubmittedAffirmations
@@ -92,6 +93,32 @@ class AffirmationStore: ObservableObject {
     func refreshUserAffirmationSync() {
         syncCoordinator.scheduleSync()
         favoriteSyncCoordinator.scheduleSync()
+    }
+
+    func noteUserAffirmationSyncAttempt() {
+        syncDiagnostics.userAffirmations.lastAttemptAt = Date()
+    }
+
+    func noteUserAffirmationSyncSuccess() {
+        syncDiagnostics.userAffirmations.lastSuccessAt = Date()
+        syncDiagnostics.userAffirmations.lastError = nil
+    }
+
+    func noteUserAffirmationSyncFailure(_ error: Error) {
+        syncDiagnostics.userAffirmations.lastError = error.localizedDescription
+    }
+
+    func noteFavoriteSyncAttempt() {
+        syncDiagnostics.favorites.lastAttemptAt = Date()
+    }
+
+    func noteFavoriteSyncSuccess() {
+        syncDiagnostics.favorites.lastSuccessAt = Date()
+        syncDiagnostics.favorites.lastError = nil
+    }
+
+    func noteFavoriteSyncFailure(_ error: Error) {
+        syncDiagnostics.favorites.lastError = error.localizedDescription
     }
 
     /// Toggles the favorite flag for the given affirmation in either built-in or user-submitted collections.

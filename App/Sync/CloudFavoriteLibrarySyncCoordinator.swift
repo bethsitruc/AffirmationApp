@@ -54,6 +54,7 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
 
     private func syncOnce() async {
         guard let store else { return }
+        store.noteFavoriteSyncAttempt()
 
         do {
             let remote = try await fetchRemoteState()
@@ -62,6 +63,7 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
                 tombstones: remote.tombstones
             )
         } catch {
+            store.noteFavoriteSyncFailure(error)
             #if DEBUG
             print("Cloud favorite fetch failed:", error.localizedDescription)
             #endif
@@ -71,7 +73,9 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
             let localFavorites = store.favoriteAffirmationsForSync()
             let localTombstones = store.favoriteAffirmationTombstonesForSync()
             try await pushState(favorites: localFavorites, tombstones: localTombstones)
+            store.noteFavoriteSyncSuccess()
         } catch {
+            store.noteFavoriteSyncFailure(error)
             #if DEBUG
             print("Cloud favorite push failed:", error.localizedDescription)
             #endif
