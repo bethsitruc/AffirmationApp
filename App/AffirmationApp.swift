@@ -77,6 +77,7 @@ struct AffirmationApp: App {
             // Pass the single store instance into the main view.
             withScenePhaseChange(
                 AffirmationView(store: store)
+                    .environmentObject(store)
                     .environmentObject(appearance)
                     // Refresh the shared latest quote on a cadence so widgets stay fresh
                     // without hitting the quote API on every launch.
