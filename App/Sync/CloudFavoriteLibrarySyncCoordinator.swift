@@ -108,7 +108,14 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
             if let cursor {
                 operation = CKQueryOperation(cursor: cursor)
             } else {
-                let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
+                let query = CKQuery(
+                    recordType: recordType,
+                    predicate: NSPredicate(
+                        format: "createdAt > %@",
+                        Date.distantPast as NSDate
+                    )
+                )
+                query.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: true)]
                 operation = CKQueryOperation(query: query)
             }
 
