@@ -56,24 +56,14 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
 
-                Section("Sync Status") {
-                    SyncChannelDiagnosticsView(
-                        title: "User Affirmations",
-                        diagnostics: store.syncDiagnostics.userAffirmations,
-                        countLabel: "Local Count",
-                        countValue: store.userSubmittedAffirmations.count
-                    )
-
-                    SyncChannelDiagnosticsView(
-                        title: "Favorites",
-                        diagnostics: store.syncDiagnostics.favorites,
-                        countLabel: "Local Count",
-                        countValue: store.favoriteAffirmations().count
-                    )
-
-                    Button("Retry Sync") {
+                Section("Sync") {
+                    Button("Sync Now") {
                         store.refreshUserAffirmationSync()
                     }
+
+                    Text(syncStatusMessage)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                 }
             }
         )
@@ -98,29 +88,30 @@ struct SettingsView: View {
             }
         }
     }
-}
 
-private struct SyncChannelDiagnosticsView: View {
-    let title: String
-    let diagnostics: SyncChannelDiagnostics
-    let countLabel: String
-    let countValue: Int
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.headline)
-
-            LabeledContent(countLabel, value: "\(countValue)")
-            LabeledContent("Last Attempt", value: formatted(diagnostics.lastAttemptAt))
-            LabeledContent("Last Success", value: formatted(diagnostics.lastSuccessAt))
-            LabeledContent("Last Error", value: diagnostics.lastError ?? "None")
+    private var syncStatusMessage: String {
+        if let error = latestSyncError {
+            return "Last sync issue: \(error)"
         }
-        .font(.footnote)
+
+        if let lastSuccess = latestSyncSuccess {
+            return "Last synced \(lastSuccess.formatted(date: .abbreviated, time: .shortened))."
+        }
+
+        return "Keeps favorites, personal affirmations, and appearance in sync across your devices."
     }
 
-    private func formatted(_ date: Date?) -> String {
-        guard let date else { return "Never" }
-        return date.formatted(date: .abbreviated, time: .shortened)
+    private var latestSyncSuccess: Date? {
+        [
+            store.syncDiagnostics.userAffirmations.lastSuccessAt,
+            store.syncDiagnostics.favorites.lastSuccessAt,
+        ]
+        .compactMap { $0 }
+        .max()
+    }
+
+    private var latestSyncError: String? {
+        store.syncDiagnostics.userAffirmations.lastError
+            ?? store.syncDiagnostics.favorites.lastError
     }
 }
