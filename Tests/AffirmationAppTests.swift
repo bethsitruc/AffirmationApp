@@ -179,6 +179,45 @@ struct AffirmationStoreTests {
         #expect(tombstone.id == added.id)
     }
 
+    @Test("Persisted tombstones win when the app reloads")
+    func persistedTombstonesPruneDeletedAffirmationsOnInit() throws {
+        let snapshot = SharedDefaultsSnapshot(keys: defaultsKeys)
+        defer { snapshot.restore() }
+        clearSharedDefaults()
+
+        let id = UUID()
+        let createdAt = Date(timeIntervalSince1970: 100)
+        let updatedAt = Date(timeIntervalSince1970: 120)
+        let deletedAt = Date(timeIntervalSince1970: 150)
+
+        let staleUserAffirmation = Affirmation(
+            id: id,
+            text: "This should stay deleted.",
+            isFavorite: true,
+            isUserCreated: true,
+            themes: ["test"],
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            isAIGenerated: false
+        )
+        let staleFavorite = staleUserAffirmation
+        let tombstone = UserAffirmationTombstone(id: id, deletedAt: deletedAt)
+        let favoriteTombstone = FavoriteAffirmationTombstone(
+            favoriteStorageKey: staleFavorite.favoriteStorageKey,
+            deletedAt: deletedAt
+        )
+
+        SharedDefaults.set(try JSONEncoder().encode([staleUserAffirmation]), forKey: UserDefaults.Keys.userSubmittedAffirmations)
+        SharedDefaults.set(try JSONEncoder().encode([staleFavorite]), forKey: UserDefaults.Keys.favoriteAffirmations)
+        SharedDefaults.set(try JSONEncoder().encode([tombstone]), forKey: UserDefaults.Keys.deletedUserAffirmationTombstones)
+        SharedDefaults.set(try JSONEncoder().encode([favoriteTombstone]), forKey: UserDefaults.Keys.deletedFavoriteAffirmationTombstones)
+
+        let store = AffirmationStore()
+
+        #expect(store.userSubmittedAffirmations.isEmpty)
+        #expect(store.favoriteAffirmations().isEmpty)
+    }
+
     @Test("Remote sync prefers the newest user affirmation over older tombstones")
     func remoteSyncMergePrefersLatestRecord() throws {
         let snapshot = SharedDefaultsSnapshot(keys: defaultsKeys)
@@ -308,6 +347,58 @@ struct AffirmationStoreTests {
             }
             return nil
         }
+    }
+}
+
+@Suite("Affirmation Generator")
+struct AffirmationGeneratorPromptTests {
+    @Test("Prompt adds tailored nostalgic guidance")
+    func nostalgicPromptIncludesConcreteGuidance() {
+        let prompt = FoundationModelClient.prompt(
+            for: "nostalgic",
+            tone: .calm
+        )
+
+        #expect(prompt.contains("younger version of yourself"))
+        #expect(prompt.contains("childhood rooms"))
+        #expect(prompt.contains("healing through remembered softness"))
+    }
+
+    @Test("Prompt avoids generic wording for untailored themes")
+    func genericPromptStillAsksForSpecificity() {
+        let prompt = FoundationModelClient.prompt(
+            for: "fresh starts",
+            tone: .confident
+        )
+
+        #expect(prompt.contains("fresh starts"))
+        #expect(prompt.contains("concrete emotional lens or lived image"))
+    }
+
+    @Test("Playful tone explicitly asks for wit and surprise")
+    func playfulToneGuidanceIsDistinct() {
+        let prompt = FoundationModelClient.prompt(for: "tired", tone: .playful)
+        #expect(AffirmationGenerator.Tone.playful.instructionsQualifier.contains("witty"))
+        #expect(AffirmationGenerator.Tone.playful.styleGuidance.contains("gentle wordplay"))
+        #expect(AffirmationGenerator.Tone.playful.promptQualifier.contains("lightly clever"))
+        #expect(prompt.contains("mischievous metaphor"))
+        #expect(prompt.contains("Avoid plain therapy language"))
+        #expect(prompt.contains("low-battery humor"))
+        #expect(prompt.contains("rest and recharge"))
+        #expect(prompt.contains("not playful enough"))
+    }
+
+    @Test("Confident tone is grounded instead of hype-driven")
+    func confidentToneAvoidsPepRallyLanguage() {
+        #expect(AffirmationGenerator.Tone.confident.styleGuidance.contains("not performative"))
+        #expect(AffirmationGenerator.Tone.confident.promptQualifier.contains("deep self-trust"))
+        #expect(!AffirmationGenerator.Tone.confident.promptQualifier.contains("pre-game rally"))
+    }
+
+    @Test("Grateful tone emphasizes noticing over generic thanks")
+    func gratefulToneGuidanceIsConcrete() {
+        #expect(AffirmationGenerator.Tone.grateful.styleGuidance.contains("ordinary gifts"))
+        #expect(AffirmationGenerator.Tone.grateful.promptQualifier.contains("savoring ordinary gifts"))
     }
 }
 

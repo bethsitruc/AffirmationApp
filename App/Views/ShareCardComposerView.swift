@@ -10,8 +10,7 @@ struct ShareCardComposerView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appearance: AppearanceSettings
     @State private var includeBadge: Bool = true
-    @State private var showingShareSheet = false
-    @State private var shareImage: UIImage?
+    @State private var sharePayload: SharePayload?
     @State private var shareError: String?
 
     var body: some View {
@@ -22,7 +21,8 @@ struct ShareCardComposerView: View {
                         affirmation: affirmation,
                         theme: appearance.theme,
                         fontPreference: appearance.font,
-                        includeBadge: includeBadge
+                        includeBadge: includeBadge,
+                        layout: .preview
                     )
                     .frame(height: 360)
                     .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
@@ -51,11 +51,9 @@ struct ShareCardComposerView: View {
             }
         }
         .tint(appearance.theme.accentColor)
-        .sheet(isPresented: $showingShareSheet) {
-            if let image = shareImage {
-                ActivityView(activityItems: [image])
-            }
-        }
+        .background(
+            ActivityPresenter(payload: $sharePayload)
+        )
         .alert("Unable to Share", isPresented: Binding(
             get: { shareError != nil },
             set: { if !$0 { shareError = nil } }
@@ -67,20 +65,24 @@ struct ShareCardComposerView: View {
     }
 
     private func renderAndShare() {
+        prepareShareItems()
+    }
+
+    private func prepareShareItems() {
         #if canImport(UIKit)
         let renderer = ImageRenderer(content:
             AffirmationShareCardView(
                 affirmation: affirmation,
                 theme: appearance.theme,
                 fontPreference: appearance.font,
-                includeBadge: includeBadge
+                includeBadge: includeBadge,
+                layout: .export
             )
-            .frame(width: 1080, height: 1350)
+            .frame(width: 1200, height: 900)
         )
         renderer.scale = UIScreen.main.scale
         if let uiImage = renderer.uiImage {
-            shareImage = uiImage
-            showingShareSheet = true
+            sharePayload = SharePayload(items: [uiImage])
         } else {
             shareError = "Could not render the card image."
         }
@@ -90,41 +92,114 @@ struct ShareCardComposerView: View {
     }
 }
 
+private extension ShareCardComposerView {
+    struct SharePayload: Identifiable {
+        let id = UUID()
+        let items: [Any]
+    }
+}
+
 struct AffirmationShareCardView: View {
     let affirmation: Affirmation
     let theme: AffirmationColorTheme
     let fontPreference: AffirmationFontPreference
     let includeBadge: Bool
+    let layout: LayoutStyle
 
     var body: some View {
         ZStack {
             theme.gradient
                 .ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: layout.verticalSpacing) {
                 if includeBadge {
                     Label {
                         Text("Grounded")
                     } icon: {
-                        DS.Icons.badgeLeaf(size: 30, color: theme.accentColor)
+                        DS.Icons.badgeLeaf(size: layout.badgeIconSize, color: theme.accentColor)
                     }
-                    .font(.headline)
+                    .font(layout.badgeFont)
                     .foregroundStyle(theme.secondaryText)
                 }
 
                 Text(affirmation.text)
-                    .font(fontPreference.swiftUIFont)
+                    .font(fontPreference.font(size: layout.textSize, weight: .semibold))
                     .foregroundStyle(theme.primaryText)
-                    .minimumScaleFactor(0.5)
-                    .lineSpacing(6)
+                    .minimumScaleFactor(layout.minimumScaleFactor)
+                    .lineSpacing(layout.lineSpacing)
+                    .frame(maxHeight: .infinity, alignment: .center)
 
-                Spacer()
-
-                Text(Date.now, style: .date)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(theme.secondaryText)
+                HStack {
+                    Spacer()
+                    Text(Date.now, style: .date)
+                        .font(layout.dateFont)
+                        .foregroundStyle(theme.secondaryText)
+                }
             }
-            .padding(48)
+            .padding(layout.padding)
+        }
+    }
+}
+
+extension AffirmationShareCardView {
+    enum LayoutStyle {
+        case preview
+        case export
+
+        var verticalSpacing: CGFloat {
+            switch self {
+            case .preview: 20
+            case .export: 32
+            }
+        }
+
+        var badgeIconSize: CGFloat {
+            switch self {
+            case .preview: 22
+            case .export: 34
+            }
+        }
+
+        var badgeFont: Font {
+            switch self {
+            case .preview: .headline
+            case .export: .title3.weight(.semibold)
+            }
+        }
+
+        var textSize: CGFloat {
+            switch self {
+            case .preview: 28
+            case .export: 60
+            }
+        }
+
+        var minimumScaleFactor: CGFloat {
+            switch self {
+            case .preview: 0.5
+            case .export: 0.75
+            }
+        }
+
+        var lineSpacing: CGFloat {
+            switch self {
+            case .preview: 6
+            case .export: 10
+            }
+        }
+
+        var dateFont: Font {
+            switch self {
+            case .preview: .footnote.weight(.semibold)
+            case .export: .title3.weight(.semibold)
+            }
+        }
+
+        var padding: CGFloat {
+            switch self {
+            case .preview: 32
+            case .export: 64
+            }
         }
     }
 }
@@ -139,13 +214,47 @@ struct ShareCardComposerView_Previews: PreviewProvider {
 #endif
 
 #if canImport(UIKit)
-struct ActivityView: UIViewControllerRepresentable {
-    let activityItems: [Any]
+fileprivate struct ActivityPresenter: UIViewControllerRepresentable {
+    @Binding var payload: ShareCardComposerView.SharePayload?
 
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
     }
 
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+    func makeUIViewController(context: Context) -> UIViewController {
+        UIViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        guard let payload, context.coordinator.presentedPayloadID != payload.id else {
+            return
+        }
+
+        let activityController = UIActivityViewController(
+            activityItems: payload.items,
+            applicationActivities: nil
+        )
+        activityController.completionWithItemsHandler = { _, _, _, _ in
+            Task { @MainActor in
+                context.coordinator.presentedPayloadID = nil
+                self.payload = nil
+            }
+        }
+
+        context.coordinator.presentedPayloadID = payload.id
+        DispatchQueue.main.async {
+            guard uiViewController.presentedViewController == nil else { return }
+            uiViewController.present(activityController, animated: true)
+        }
+    }
+
+    final class Coordinator {
+        let parent: ActivityPresenter
+        var presentedPayloadID: UUID?
+
+        init(parent: ActivityPresenter) {
+            self.parent = parent
+        }
+    }
 }
 #endif

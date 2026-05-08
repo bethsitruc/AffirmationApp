@@ -60,6 +60,72 @@ class AffirmationStore: ObservableObject {
     private var isApplyingRemoteUserSync = false
     private var isApplyingRemoteFavoriteSync = false
 
+    private func latestAffirmationMap(
+        for affirmations: [Affirmation],
+        key: (Affirmation) -> String
+    ) -> [String: Affirmation] {
+        var map: [String: Affirmation] = [:]
+        for affirmation in affirmations {
+            let storageKey = key(affirmation)
+            if let existing = map[storageKey] {
+                if affirmation.syncTimestamp >= existing.syncTimestamp {
+                    map[storageKey] = affirmation
+                }
+            } else {
+                map[storageKey] = affirmation
+            }
+        }
+        return map
+    }
+
+    private func latestUserTombstoneMap(
+        for tombstones: [UserAffirmationTombstone]
+    ) -> [UUID: UserAffirmationTombstone] {
+        var map: [UUID: UserAffirmationTombstone] = [:]
+        for tombstone in tombstones {
+            if let existing = map[tombstone.id] {
+                if tombstone.deletedAt >= existing.deletedAt {
+                    map[tombstone.id] = tombstone
+                }
+            } else {
+                map[tombstone.id] = tombstone
+            }
+        }
+        return map
+    }
+
+    private func latestAffirmationByID(
+        for affirmations: [Affirmation]
+    ) -> [UUID: Affirmation] {
+        var map: [UUID: Affirmation] = [:]
+        for affirmation in affirmations {
+            if let existing = map[affirmation.id] {
+                if affirmation.syncTimestamp >= existing.syncTimestamp {
+                    map[affirmation.id] = affirmation
+                }
+            } else {
+                map[affirmation.id] = affirmation
+            }
+        }
+        return map
+    }
+
+    private func latestFavoriteTombstoneMap(
+        for tombstones: [FavoriteAffirmationTombstone]
+    ) -> [String: FavoriteAffirmationTombstone] {
+        var map: [String: FavoriteAffirmationTombstone] = [:]
+        for tombstone in tombstones {
+            if let existing = map[tombstone.favoriteStorageKey] {
+                if tombstone.deletedAt >= existing.deletedAt {
+                    map[tombstone.favoriteStorageKey] = tombstone
+                }
+            } else {
+                map[tombstone.favoriteStorageKey] = tombstone
+            }
+        }
+        return map
+    }
+
     // Initialize and load stored affirmations
     init(
         syncCoordinator: any UserAffirmationSyncing,
@@ -73,6 +139,7 @@ class AffirmationStore: ObservableObject {
         loadFavoriteAffirmations()
         loadDeletedFavoriteAffirmationTombstones()
         migrateLegacyFavoritesIfNeeded()
+        reconcilePersistedState()
         applyFavoriteFlagsToCollections()
         syncCoordinator.attach(store: self)
         favoriteSyncCoordinator.attach(store: self)
@@ -336,6 +403,34 @@ class AffirmationStore: ObservableObject {
         }
     }
 
+    private func reconcilePersistedState() {
+        let userTombstonesByID = latestUserTombstoneMap(for: deletedUserAffirmationTombstones)
+        if !userTombstonesByID.isEmpty {
+            userSubmittedAffirmations.removeAll { affirmation in
+                guard let tombstone = userTombstonesByID[affirmation.id] else { return false }
+                return tombstone.deletedAt >= affirmation.syncTimestamp
+            }
+        }
+
+        let favoriteTombstonesByKey = latestFavoriteTombstoneMap(for: deletedFavoriteAffirmationTombstones)
+        if !favoriteTombstonesByKey.isEmpty || !userTombstonesByID.isEmpty {
+            favoriteLibrary.removeAll { favorite in
+                if let favoriteTombstone = favoriteTombstonesByKey[favorite.favoriteStorageKey],
+                   favoriteTombstone.deletedAt >= favorite.syncTimestamp {
+                    return true
+                }
+
+                if favorite.isUserCreated,
+                   let userTombstone = userTombstonesByID[favorite.id],
+                   userTombstone.deletedAt >= favorite.syncTimestamp {
+                    return true
+                }
+
+                return false
+            }
+        }
+    }
+
     private func applyFavoriteFlagsToCollections() {
         let favoriteKeys = Set(favoriteLibrary.map(\.favoriteStorageKey))
 
@@ -359,7 +454,10 @@ class AffirmationStore: ObservableObject {
             userSubmittedAffirmations = updatedUserAffirmations
         }
 
-        let byKey = Dictionary(uniqueKeysWithValues: (affirmations + userSubmittedAffirmations).map { ($0.favoriteStorageKey, $0) })
+        let byKey = latestAffirmationMap(
+            for: affirmations + userSubmittedAffirmations,
+            key: \.favoriteStorageKey
+        )
         let refreshedFavorites = favoriteLibrary.map { favorite in
             byKey[favorite.favoriteStorageKey] ?? flaggedCopy(for: favorite, forceFavorite: true)
         }
@@ -405,10 +503,10 @@ class AffirmationStore: ObservableObject {
         affirmations remoteAffirmations: [Affirmation],
         tombstones remoteTombstones: [UserAffirmationTombstone]
     ) {
-        let localAffirmations = Dictionary(uniqueKeysWithValues: userSubmittedAffirmations.map { ($0.id, $0) })
-        let remoteAffirmationMap = Dictionary(uniqueKeysWithValues: remoteAffirmations.map { ($0.id, $0) })
-        let localTombstoneMap = Dictionary(uniqueKeysWithValues: deletedUserAffirmationTombstones.map { ($0.id, $0) })
-        let remoteTombstoneMap = Dictionary(uniqueKeysWithValues: remoteTombstones.map { ($0.id, $0) })
+        let localAffirmations = latestAffirmationByID(for: userSubmittedAffirmations)
+        let remoteAffirmationMap = latestAffirmationByID(for: remoteAffirmations)
+        let localTombstoneMap = latestUserTombstoneMap(for: deletedUserAffirmationTombstones)
+        let remoteTombstoneMap = latestUserTombstoneMap(for: remoteTombstones)
 
         let allIDs = Set(localAffirmations.keys)
             .union(remoteAffirmationMap.keys)
@@ -471,10 +569,10 @@ class AffirmationStore: ObservableObject {
         favorites remoteFavorites: [Affirmation],
         tombstones remoteTombstones: [FavoriteAffirmationTombstone]
     ) {
-        let localFavorites = Dictionary(uniqueKeysWithValues: favoriteLibrary.map { ($0.favoriteStorageKey, $0) })
-        let remoteFavoriteMap = Dictionary(uniqueKeysWithValues: remoteFavorites.map { ($0.favoriteStorageKey, $0) })
-        let localTombstoneMap = Dictionary(uniqueKeysWithValues: deletedFavoriteAffirmationTombstones.map { ($0.favoriteStorageKey, $0) })
-        let remoteTombstoneMap = Dictionary(uniqueKeysWithValues: remoteTombstones.map { ($0.favoriteStorageKey, $0) })
+        let localFavorites = latestAffirmationMap(for: favoriteLibrary, key: \.favoriteStorageKey)
+        let remoteFavoriteMap = latestAffirmationMap(for: remoteFavorites, key: \.favoriteStorageKey)
+        let localTombstoneMap = latestFavoriteTombstoneMap(for: deletedFavoriteAffirmationTombstones)
+        let remoteTombstoneMap = latestFavoriteTombstoneMap(for: remoteTombstones)
 
         let allKeys = Set(localFavorites.keys)
             .union(remoteFavoriteMap.keys)

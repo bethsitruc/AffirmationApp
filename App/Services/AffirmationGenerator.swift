@@ -88,18 +88,18 @@ extension AffirmationGenerator {
         var label: String {
             switch self {
             case .calm: return "Calm & Centered"
-            case .confident: return "Bold & Confident"
-            case .playful: return "Playful Boost"
-            case .grateful: return "Gratitude"
+            case .confident: return "Steady & Confident"
+            case .playful: return "Playful & Bright"
+            case .grateful: return "Grateful & Open"
             }
         }
 
         var instructionsQualifier: String {
             switch self {
             case .calm: return "Calm, steady, and reassuring."
-            case .confident: return "Energizing, courageous, and direct."
-            case .playful: return "Light, witty, and uplifting."
-            case .grateful: return "Warm, appreciative, and heart-forward."
+            case .confident: return "Self-trusting, assured, and quietly strong."
+            case .playful: return "Warm, whimsical, and genuinely witty."
+            case .grateful: return "Openhearted, appreciative, and gently reverent."
             }
         }
 
@@ -108,20 +108,39 @@ extension AffirmationGenerator {
             case .calm:
                 return "Soft cadences, soothing verbs, grounded imagery like breath, tides, or steady light."
             case .confident:
-                return "Strong verbs, vivid momentum, language that feels like a pep talk before a big moment."
+                return "Clear, decisive language with grounded strength; confidence should feel rooted, not performative or shouty."
             case .playful:
-                return "Surprising metaphors, lively verbs, maybe a wink of humor or rhythm (no sarcasm)."
+                return "Use a clever turn of phrase, gentle wordplay, or a surprising but sincere image. No sarcasm, cringe slang, or trying too hard."
             case .grateful:
-                return "Language of appreciation, noticing small gifts, gentle warmth."
+                return "Language of noticing, appreciation, and ordinary gifts; gratitude should feel specific, not generic."
             }
         }
 
         var promptQualifier: String {
             switch self {
             case .calm: return "and make it sound like a gentle reset for the nervous system"
-            case .confident: return "and make it sound bold enough for a pre-game rally"
-            case .playful: return "and make it sound whimsical, upbeat, even a little cheeky"
-            case .grateful: return "and make it sound thankful, savoring small gifts"
+            case .confident: return "and make it sound like deep self-trust before an important moment"
+            case .playful: return "and make it sound whimsical, lightly clever, and a little delightfully unexpected"
+            case .grateful: return "and make it sound like someone savoring ordinary gifts with intention"
+            }
+        }
+
+        var extraPromptDirections: String {
+            switch self {
+            case .calm:
+                return ""
+            case .confident:
+                return "Prefer steady conviction over hype."
+            case .playful:
+                return """
+                A playful line should contain a wink of personality: a gentle pun, mischievous metaphor, or unexpectedly charming image.
+                It should feel like something you'd text a friend to make them smile, while still being sincere.
+                Avoid plain therapy language that could fit any tone.
+                If the line could also pass for calm or grateful, it is not playful enough.
+                Examples of the energy: “My tired soul deserves first-class rest.” “I give my inner child the aux cord today.” “I let this moment sparkle a little on purpose.”
+                """
+            case .grateful:
+                return "Name something quietly good or worth noticing instead of saying gratitude in abstract terms."
             }
         }
 
@@ -181,25 +200,25 @@ extension AffirmationGenerator {
 
         private static func confidentBoost(for focus: String) -> String {
             [
-                "I charge into \(focus) with fearless energy.",
-                "I lead \(focus) with bold, clear action.",
-                "I turn \(focus) into proof of my power."
+                "I meet \(focus) with clear trust in myself.",
+                "I move through \(focus) with steady conviction.",
+                "I let \(focus) show me how capable I already am."
             ].randomElement()!
         }
 
         private static func playfulTag(for focus: String) -> String {
             [
-                "Let’s make \(focus) a joyful improv.",
-                "I dance through \(focus) with laughter and light.",
-                "\(focus.capitalized) gets the confetti treatment today."
+                "I let \(focus) be a little lighter and a lot more alive.",
+                "I bring sparkle, softness, and a tiny wink to \(focus).",
+                "\(focus.capitalized) gets the confetti version of me today."
             ].randomElement()!
         }
 
         private static func gratefulTag(for focus: String) -> String {
             [
-                "I savor \(focus) with a thankful heart.",
-                "I honor the tiny blessings tucked inside \(focus).",
-                "\(focus.capitalized) is another chance to practice gratitude."
+                "I notice the quiet goodness tucked inside \(focus).",
+                "I let \(focus) remind me what is already here to cherish.",
+                "\(focus.capitalized) becomes softer when I meet it with gratitude."
             ].randomElement()!
         }
     }
@@ -269,16 +288,37 @@ struct FoundationModelClient {
         You are an inclusive affirmation coach. Follow the rules:
         • Reply with exactly one first-person statement, 8–18 words, no emojis/hashtags.
         • Use accessible language people can read aloud without cringing.
+        • Avoid generic filler like “I am enough” or “I believe in myself” unless the prompt clearly calls for it.
+        • Make the line feel tailored to the theme by using a concrete emotional lens, image, memory, or sensory detail.
         • Tone goal: \(tone.instructionsQualifier) \(tone.styleGuidance)
         """
     }
 #endif
 
-    private static func prompt(for theme: String?, tone: AffirmationGenerator.Tone) -> String {
+    static func prompt(for theme: String?, tone: AffirmationGenerator.Tone) -> String {
         guard let trimmed = sanitized(theme) else {
-            return "Write one short (≤18 words) present-tense affirmation reinforcing self-belief, \(tone.promptQualifier)."
+            return """
+            Write one short (≤18 words) present-tense affirmation reinforcing self-belief, \(tone.promptQualifier).
+            Make it vivid and specific instead of generic.
+            \(tone.extraPromptDirections)
+            """
         }
-        return "Write one short (≤18 words) present-tense affirmation about \(trimmed) that stays first-person and specific, \(tone.promptQualifier)."
+
+        let guidance = themeGuidance(for: trimmed)
+        let thematicBrief = guidance.map {
+            "Theme details: \($0.focus). Imagery to lean on: \($0.imagery). Avoid: \($0.avoidance)."
+        } ?? "Translate the theme into a concrete emotional lens or lived image instead of using broad motivational language."
+
+        let optionalAnchor = guidance.map { "Useful direction: \($0.anchorExample)" } ?? ""
+        let toneSpecificGuidance = toneSpecificGuidance(for: trimmed, tone: tone)
+
+        return """
+        Write one short (≤18 words) present-tense affirmation about \(trimmed) that stays first-person and specific, \(tone.promptQualifier).
+        \(thematicBrief)
+        \(optionalAnchor)
+        \(toneSpecificGuidance)
+        \(tone.extraPromptDirections)
+        """
     }
 
     private static func sanitized(_ theme: String?) -> String? {
@@ -293,6 +333,155 @@ struct FoundationModelClient {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .trimmingCharacters(in: CharacterSet(charactersIn: "\"“”"))
     }
+
+    private static func toneSpecificGuidance(for theme: String, tone: AffirmationGenerator.Tone) -> String {
+        let normalized = theme.lowercased()
+
+        switch tone {
+        case .playful:
+            if ["tired", "fatigue", "burnout", "exhaust", "rest"].contains(where: normalized.contains) {
+                return """
+                For a playful take on tiredness, use cozy or funny rest imagery: blankets, soft landings, low-battery humor, naps, pajamas, dimmer switches, hibernation, or a gentle soft-reboot feeling.
+                Avoid wellness clichés like “rest and recharge,” “embrace my tired body,” or anything that sounds like generic self-care copy.
+                """
+            }
+            if ["nostalg", "childhood", "inner child", "memory"].contains(where: normalized.contains) {
+                return """
+                For playful nostalgia, lean into younger-self delight: stickers, cassette tapes, tree forts, snack breaks, glitter pens, or bike-riding freedom.
+                """
+            }
+            return ""
+        case .calm, .confident, .grateful:
+            return ""
+        }
+    }
+
+    private static func isTooGenericPlayful(_ text: String) -> Bool {
+        let normalized = text.lowercased()
+        let bannedPhrases = [
+            "rest and recharge",
+            "embrace my tired body",
+            "trusting it to rest",
+            "i trust myself to rest",
+            "i allow myself to rest",
+            "i give myself permission to rest",
+            "i honor my need for rest",
+            "i embrace",
+            "i trust",
+            "i allow"
+        ]
+
+        if bannedPhrases.contains(where: normalized.contains) {
+            return true
+        }
+
+        let playfulSignals = [
+            "sparkle", "confetti", "glitter", "wink", "aux", "pajama", "blanket",
+            "nap", "soft reboot", "battery", "hibernate", "snack", "sticker"
+        ]
+        return !playfulSignals.contains(where: normalized.contains)
+    }
+
+    private static func themeGuidance(for theme: String) -> ThemeGuidance? {
+        let normalized = theme.lowercased()
+
+        let guidanceMap: [(keywords: [String], guidance: ThemeGuidance)] = [
+            (
+                ["nostalg", "childhood", "inner child", "memory", "younger self"],
+                ThemeGuidance(
+                    focus: "Let it feel tender and reflective, like reconnecting with a younger version of yourself.",
+                    imagery: "childhood rooms, old songs, familiar scents, keepsakes, playground light, family rituals",
+                    avoidance: "generic confidence slogans with no sense of memory or emotional warmth",
+                    anchorExample: "Nostalgic should feel like healing through remembered softness, not just positivity."
+                )
+            ),
+            (
+                ["grief", "loss", "mourning"],
+                ThemeGuidance(
+                    focus: "Make space for sadness and continued love without trying to erase the ache.",
+                    imagery: "held memories, quiet rituals, carrying love forward, soft strength",
+                    avoidance: "forced silver linings or language that rushes someone past pain",
+                    anchorExample: "The line should feel comforting and steady, not like a command to move on."
+                )
+            ),
+            (
+                ["anxious", "anxiety", "panic", "overwhelm", "stressed"],
+                ThemeGuidance(
+                    focus: "Ground the affirmation in safety, the body, and returning to the present moment.",
+                    imagery: "breath, feet on the floor, steady hands, slowing down, softened shoulders",
+                    avoidance: "abstract platitudes that ignore the physical experience of anxiety",
+                    anchorExample: "It should sound usable in the middle of a tense moment."
+                )
+            ),
+            (
+                ["burnout", "exhaust", "tired", "rest", "fatigue"],
+                ThemeGuidance(
+                    focus: "Center permission, gentleness, and worth that does not depend on productivity.",
+                    imagery: "rest, unclenching, quiet mornings, recovery, lighter pace",
+                    avoidance: "hustle language or anything that sounds like a pep talk to keep pushing",
+                    anchorExample: "The line should help someone soften, not perform harder."
+                )
+            ),
+            (
+                ["lonely", "alone", "isolated", "belong"],
+                ThemeGuidance(
+                    focus: "Emphasize belonging, being held in the world, and connection that can still be felt.",
+                    imagery: "warmth, being welcomed, open doors, chosen people, quiet companionship",
+                    avoidance: "statements that deny loneliness instead of meeting it honestly",
+                    anchorExample: "The line should feel companioning and reassuring."
+                )
+            ),
+            (
+                ["transition", "change", "new chapter", "uncertain", "unknown"],
+                ThemeGuidance(
+                    focus: "Frame the affirmation around crossing a threshold with steadiness and trust.",
+                    imagery: "doorways, bridges, unfolding paths, new seasons, first steps",
+                    avoidance: "vague encouragement with no sense of movement or change",
+                    anchorExample: "The line should feel like support during a real life shift."
+                )
+            ),
+            (
+                ["heartbreak", "breakup", "healing"],
+                ThemeGuidance(
+                    focus: "Center self-return, tenderness, and rebuilding trust in your own heart.",
+                    imagery: "mending, coming home to yourself, soft courage, tenderness",
+                    avoidance: "revenge energy or clichés about instantly being over it",
+                    anchorExample: "The line should feel restorative and intimate."
+                )
+            ),
+            (
+                ["confidence", "bold", "courage", "brave"],
+                ThemeGuidance(
+                    focus: "Make it feel embodied and active, like someone stepping fully into their own voice.",
+                    imagery: "clear posture, steady eye contact, strong steps, owning space",
+                    avoidance: "empty boss-language or generic hype with no emotional center",
+                    anchorExample: "Confidence should sound self-possessed, not performative."
+                )
+            ),
+            (
+                ["creative", "artist", "writing", "music", "design"],
+                ThemeGuidance(
+                    focus: "Support original expression and trusting your own creative instincts.",
+                    imagery: "making, shaping, sketching, rhythm, color, unfinished drafts becoming something",
+                    avoidance: "productivity language that strips out play or experimentation",
+                    anchorExample: "The line should feel generative and alive."
+                )
+            )
+        ]
+
+        for entry in guidanceMap where entry.keywords.contains(where: normalized.contains) {
+            return entry.guidance
+        }
+
+        return nil
+    }
+}
+
+private struct ThemeGuidance {
+    let focus: String
+    let imagery: String
+    let avoidance: String
+    let anchorExample: String
 }
 
 #if canImport(FoundationModels)
@@ -331,7 +520,26 @@ private extension FoundationModelClient {
         options.maximumResponseTokens = 48
 
         let response = try await session.respond(to: prompt, options: options)
-        return postprocess(response.content)
+        let firstPass = postprocess(response.content)
+
+        guard tone == .playful, Self.isTooGenericPlayful(firstPass) else {
+            return firstPass
+        }
+
+        let retryPrompt = """
+        Rewrite this so it is unmistakably playful and specific, not calm or therapeutic:
+        \(firstPass)
+
+        Requirements:
+        - keep it first-person and 8–18 words
+        - include one whimsical image, mischievous metaphor, or lightly clever phrase
+        - do not use generic rest language like "rest and recharge"
+        - keep it sincere, not sarcastic
+        Theme: \(sanitized(theme) ?? "none")
+        """
+
+        let retryResponse = try await session.respond(to: retryPrompt, options: options)
+        return postprocess(retryResponse.content)
     }
 }
 #endif
