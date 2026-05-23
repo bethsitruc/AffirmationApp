@@ -129,9 +129,9 @@ struct AffirmationStoreTests {
 
         store.update(missing)
 
-        let receivedNotification = try await notificationTask.value
-        let notification = try #require(receivedNotification)
-        #expect(notification.userInfo?["id"] as? String == missing.id.uuidString)
+        let receivedNotificationID = await notificationTask.value
+        let notificationID = try #require(receivedNotificationID)
+        #expect(notificationID == missing.id.uuidString)
         #expect(store.userSubmittedAffirmations.contains(where: { $0.id == missing.id }))
     }
 
@@ -157,9 +157,9 @@ struct AffirmationStoreTests {
 
         store.deleteUserAffirmation(missing)
 
-        let receivedNotification = try await notificationTask.value
-        let notification = try #require(receivedNotification)
-        #expect(notification.userInfo?["id"] as? String == missing.id.uuidString)
+        let receivedNotificationID = await notificationTask.value
+        let notificationID = try #require(receivedNotificationID)
+        #expect(notificationID == missing.id.uuidString)
     }
 
     @Test("Deleting a user affirmation persists a tombstone")
@@ -339,11 +339,11 @@ struct AffirmationStoreTests {
         return (try? JSONDecoder().decode([FavoriteAffirmationTombstone].self, from: data)) ?? []
     }
 
-    private func nextAffirmationNotFoundNotification() async -> Notification? {
+    private func nextAffirmationNotFoundNotification() async -> String? {
         let notifications = NotificationCenter.default.notifications(named: .affirmationNotFound)
         return await withTimeout(seconds: 1) {
             for await notification in notifications {
-                return notification
+                return notification.userInfo?["id"] as? String
             }
             return nil
         }
