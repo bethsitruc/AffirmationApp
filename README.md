@@ -1,44 +1,22 @@
-# Grounded: Affirmations App
+# Grounded: Affirmation App
 
-Grounded helps users save, favorite, and share daily encouragement with lightweight widgets.
+Grounded is a calm iOS affirmation app for keeping encouragement close. It supports daily affirmations, saved favorites, personal affirmations, shareable cards, Home Screen widgets, visual customization, and optional Apple Intelligence-assisted drafting.
 
-## Current Behavior
-- **Home feed refresh** uses ZenQuotes (with local filtering for uplifting tone) plus local fallback content.
-- **Apple Intelligence** is only used when a user taps Generate while creating an affirmation.
-- **Widgets** support two configurations:
-  - **Grounded Affirmation**: pin one favorite/personal affirmation.
-  - **Grounded Shuffle**: rotate by source, hourly.
+## Get the App
 
-## App Store Metadata (Quick Pass)
+- App Store: https://apps.apple.com/us/app/grounded-affirmation-app/id6760471241
+- Website: https://bethsitruc.github.io/apps/grounded
+- Privacy Policy: https://bethsitruc.github.io/privacy-policy/grounded
+- Support: https://bethsitruc.github.io/contact
 
-### Subtitle options
-- Daily quotes and affirmations
-- Grounded daily encouragement
-- Save, favorite, and share quotes
+## About This Repository
 
-### Promotional text
-Grounded keeps encouragement simple: save favorites, add your own, and share beautiful affirmation cards. Add widgets to keep support visible all day.
+This repository contains the source code and release materials for Grounded. It is maintained by Bethany Curtis and is not open for public installation, redistribution, forks, or unsolicited code contributions.
 
-### Description
-Grounded is a clean, calming way to keep encouragement close.
+If you are interested in collaborating, please contact the maintainer first so access and expectations can be discussed directly.
 
-- Read uplifting quotes refreshed regularly.
-- Save favorites and create your own affirmations.
-- Use Apple Intelligence to draft a new affirmation when you want help writing one.
-- Share beautifully styled quote cards.
-- Add Home Screen widgets for quick daily support.
+## License and Use
 
-Grounded is designed to stay lightweight, private-minded, and easy to use.
+Copyright (c) Bethany Curtis. All rights reserved.
 
-### Keywords
-affirmations,quotes,motivation,mindfulness,self care,wellness,gratitude,mental health,daily quote,widgets
-
-### What’s New template
-- Added ZenQuotes-powered home feed refresh with uplifting quote filtering.
-- Improved widget setup and readability.
-- Updated settings and About copy for a clearer, faster onboarding flow.
-
-## Release Notes / Compliance Reminders
-- Keep this support contact in App Store Connect: `bethanycurtis.builds@gmail.com`
-- Include quote attribution in metadata/help:
-  - `Quotes provided by ZenQuotes (https://zenquotes.io)`
+No license is granted for copying, modifying, distributing, or using this code outside authorized collaboration.
