@@ -29,9 +29,10 @@ struct AffirmationApp: App {
     private let fetcher = FreshAffirmationFetcher()
 
     init() {
+        let isRunningTests = Self.isRunningTests
         let syncCoordinator: any UserAffirmationSyncing
         let favoriteSyncCoordinator: any FavoriteLibrarySyncing
-        if Self.isRunningTests {
+        if isRunningTests {
             syncCoordinator = NoOpUserAffirmationSyncCoordinator()
             favoriteSyncCoordinator = NoOpFavoriteLibrarySyncCoordinator()
         } else {
@@ -47,7 +48,9 @@ struct AffirmationApp: App {
             favoriteSyncCoordinator: favoriteSyncCoordinator
         )
         _store = StateObject(wrappedValue: store)
-        CloudPreferenceStore.startObserving()
+        if !isRunningTests {
+            CloudPreferenceStore.startObserving()
+        }
 
         if ProcessInfo.processInfo.arguments.contains("-ui-testing-reset-state") {
             let keysToReset = [
@@ -109,6 +112,7 @@ struct AffirmationApp: App {
     private static var isRunningTests: Bool {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
             || NSClassFromString("XCTestCase") != nil
+            || ProcessInfo.processInfo.arguments.contains("-ui-testing-reset-state")
     }
 
     private func startUserAffirmationSyncIfNeeded() {

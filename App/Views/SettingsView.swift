@@ -16,7 +16,8 @@ struct SettingsView: View {
                             Text(cadence.displayName).tag(cadence)
                         }
                     }
-                    .pickerStyle(.segmented)
+                    // A menu remains usable in narrow iPhone Mirroring and iPad windows.
+                    .pickerStyle(.menu)
 
                     Text("Refresh Home with new ZenQuotes quotes.")
                         .font(.footnote)

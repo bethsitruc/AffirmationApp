@@ -354,21 +354,30 @@ struct MainAffirmationView: View {
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        ViewThatFits(in: .horizontal) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Affirmations")
-                        .font(appearance.font.font(size: 34, weight: .bold))
-                        .foregroundColor(appearance.theme.primaryText)
-                    Text("Daily encouragement, personalized to you.")
-                        .font(.footnote)
-                        .foregroundColor(appearance.theme.secondaryText)
-                }
+                headerTitle
                 Spacer(minLength: 12)
+                controlCluster
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                headerTitle
                 controlCluster
             }
         }
         .padding(.horizontal, DS.Layout.tilePadding)
+    }
+
+    private var headerTitle: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Affirmations")
+                .font(appearance.font.font(size: 34, weight: .bold))
+                .foregroundColor(appearance.theme.primaryText)
+            Text("Daily encouragement, personalized to you.")
+                .font(.footnote)
+                .foregroundColor(appearance.theme.secondaryText)
+        }
     }
 
     private var controlCluster: some View {
@@ -521,7 +530,7 @@ struct MainAffirmationView: View {
 
     @ViewBuilder
     private var generatorConfigSheet: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(
                     footer: Text("Optional focus helps guide the vibe without forcing exact wording.")
@@ -569,7 +578,7 @@ struct MainAffirmationView: View {
 
     @ViewBuilder
     private var generatedPreviewSheet: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Generated Affirmation").foregroundColor(appearance.theme.secondaryText)) {
                     TextEditor(text: $generatedText)
@@ -616,7 +625,7 @@ struct MainAffirmationView: View {
 
     @ViewBuilder
     private var aboutSheet: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 Section(header: Text("About Grounded: Affirmations App").foregroundColor(appearance.theme.secondaryText)) {
                     Text("Grounded keeps encouragement simple: save favorites, add your own, and share cards.")

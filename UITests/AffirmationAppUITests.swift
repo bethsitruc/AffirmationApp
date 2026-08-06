@@ -16,12 +16,19 @@ final class AffirmationAppUITests: XCTestCase {
         ]
         app.launch()
 
-        XCTAssertTrue(app.tabBars.buttons["Home"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.tabBars.buttons["Favorites"].exists)
-        XCTAssertTrue(app.tabBars.buttons["My Affirmations"].exists)
-        XCTAssertTrue(app.tabBars.buttons["Settings"].exists)
+        let homeTab = app.buttons["Home"]
+        let favoritesTab = app.buttons["Favorites"]
+        let myAffirmationsTab = app.buttons["My Affirmations"]
+        let settingsTab = app.buttons["Settings"]
 
-        app.tabBars.buttons["My Affirmations"].tap()
+        // Query stable labels directly instead of depending on a particular
+        // system tab-container hierarchy.
+        XCTAssertTrue(homeTab.waitForExistence(timeout: 5))
+        XCTAssertTrue(favoritesTab.exists)
+        XCTAssertTrue(myAffirmationsTab.exists)
+        XCTAssertTrue(settingsTab.exists)
+
+        myAffirmationsTab.tap()
         let addButton = app.buttons["submit-own-affirmation-button"]
         XCTAssertTrue(addButton.waitForExistence(timeout: 5))
         addButton.tap()
@@ -37,13 +44,13 @@ final class AffirmationAppUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts[uniqueAffirmation].waitForExistence(timeout: 5))
 
-        app.tabBars.buttons["Favorites"].tap()
+        favoritesTab.tap()
         XCTAssertTrue(app.staticTexts["Favorites"].waitForExistence(timeout: 5))
 
-        app.tabBars.buttons["Settings"].tap()
+        settingsTab.tap()
         XCTAssertTrue(app.staticTexts["Settings"].waitForExistence(timeout: 5))
 
-        app.tabBars.buttons["Home"].tap()
+        homeTab.tap()
         XCTAssertTrue(app.staticTexts["Affirmations"].waitForExistence(timeout: 5))
     }
 }
