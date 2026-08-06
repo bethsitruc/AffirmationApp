@@ -68,8 +68,7 @@ struct AffirmationTileView: View {
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
                     .minimumScaleFactor(style == .featured ? 0.9 : 0.75)
-                    .lineLimit(style == .featured ? nil : 4)
-                    .truncationMode(.tail)
+                    .lineLimit(nil)
 
                 // Top-right favorite button (kept subtle and accessible)
                 HStack {

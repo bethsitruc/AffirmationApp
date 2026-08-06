@@ -24,7 +24,7 @@ struct SubmitAffirmationView: View {
 
     var body: some View {
         // Main layout inside a navigation view
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Need inspiration?").foregroundColor(appearance.theme.secondaryText)) {
                     TextField("Optional theme or prompt (e.g., \"calm mornings\")", text: $thematicHint)

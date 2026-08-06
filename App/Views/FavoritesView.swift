@@ -35,7 +35,15 @@ struct FavoritesView: View {
                         .padding(DS.Layout.tilePadding)
                     } else {
                         let favorites = store.favoriteAffirmations()
-                        LazyVGrid(columns: [GridItem(.flexible())], spacing: DS.Layout.tilePadding) {
+                        LazyVGrid(
+                            columns: [
+                                GridItem(
+                                    .adaptive(minimum: 280, maximum: 460),
+                                    spacing: DS.Layout.tilePadding
+                                )
+                            ],
+                            spacing: DS.Layout.tilePadding
+                        ) {
                             ForEach(favorites) { affirmation in
                                 FavoriteTileView(affirmation: affirmation, store: store)
                                     .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)

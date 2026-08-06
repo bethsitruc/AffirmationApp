@@ -8,6 +8,7 @@ struct ShareCardComposerView: View {
     let affirmation: Affirmation
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.displayScale) private var displayScale
     @EnvironmentObject private var appearance: AppearanceSettings
     @State private var includeBadge: Bool = true
     @State private var sharePayload: SharePayload?
@@ -24,7 +25,8 @@ struct ShareCardComposerView: View {
                         includeBadge: includeBadge,
                         layout: .preview
                     )
-                    .frame(height: 360)
+                    .aspectRatio(4 / 3, contentMode: .fit)
+                    .frame(maxWidth: 720)
                     .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
                     .padding(.horizontal)
 
@@ -80,7 +82,9 @@ struct ShareCardComposerView: View {
             )
             .frame(width: 1200, height: 900)
         )
-        renderer.scale = UIScreen.main.scale
+        // A scene can be resized independently of the physical display on iOS 27.
+        // Use SwiftUI's scene-aware scale instead of the legacy main-screen API.
+        renderer.scale = displayScale
         if let uiImage = renderer.uiImage {
             sharePayload = SharePayload(items: [uiImage])
         } else {
@@ -234,6 +238,16 @@ fileprivate struct ActivityPresenter: UIViewControllerRepresentable {
             activityItems: payload.items,
             applicationActivities: nil
         )
+        if let popover = activityController.popoverPresentationController {
+            popover.sourceView = uiViewController.view
+            popover.sourceRect = CGRect(
+                x: uiViewController.view.bounds.midX,
+                y: uiViewController.view.bounds.midY,
+                width: 0,
+                height: 0
+            )
+            popover.permittedArrowDirections = []
+        }
         activityController.completionWithItemsHandler = { _, _, _, _ in
             Task { @MainActor in
                 context.coordinator.presentedPayloadID = nil

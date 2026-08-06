@@ -29,26 +29,7 @@ struct AffirmationApp: App {
     private let fetcher = FreshAffirmationFetcher()
 
     init() {
-        let syncCoordinator: any UserAffirmationSyncing
-        let favoriteSyncCoordinator: any FavoriteLibrarySyncing
-        if Self.isRunningTests {
-            syncCoordinator = NoOpUserAffirmationSyncCoordinator()
-            favoriteSyncCoordinator = NoOpFavoriteLibrarySyncCoordinator()
-        } else {
-            syncCoordinator = CloudUserAffirmationSyncCoordinator(
-                containerFactory: { CKContainer.default() }
-            )
-            favoriteSyncCoordinator = CloudFavoriteLibrarySyncCoordinator(
-                containerFactory: { CKContainer.default() }
-            )
-        }
-        let store = AffirmationStore(
-            syncCoordinator: syncCoordinator,
-            favoriteSyncCoordinator: favoriteSyncCoordinator
-        )
-        _store = StateObject(wrappedValue: store)
-        CloudPreferenceStore.startObserving()
-
+        let isRunningTests = Self.isRunningTests
         if ProcessInfo.processInfo.arguments.contains("-ui-testing-reset-state") {
             let keysToReset = [
                 UserDefaults.Keys.latestAffirmation,
@@ -70,6 +51,29 @@ struct AffirmationApp: App {
                 CloudPreferenceStore.removeObject(forKey: $0)
             }
         }
+
+        let syncCoordinator: any UserAffirmationSyncing
+        let favoriteSyncCoordinator: any FavoriteLibrarySyncing
+        if isRunningTests {
+            syncCoordinator = NoOpUserAffirmationSyncCoordinator()
+            favoriteSyncCoordinator = NoOpFavoriteLibrarySyncCoordinator()
+        } else {
+            syncCoordinator = CloudUserAffirmationSyncCoordinator(
+                containerFactory: { CKContainer.default() }
+            )
+            favoriteSyncCoordinator = CloudFavoriteLibrarySyncCoordinator(
+                containerFactory: { CKContainer.default() }
+            )
+        }
+        let store = AffirmationStore(
+            syncCoordinator: syncCoordinator,
+            favoriteSyncCoordinator: favoriteSyncCoordinator
+        )
+        _store = StateObject(wrappedValue: store)
+        if !isRunningTests {
+            CloudPreferenceStore.startObserving()
+        }
+
     }
     
     var body: some Scene {
@@ -109,6 +113,7 @@ struct AffirmationApp: App {
     private static var isRunningTests: Bool {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
             || NSClassFromString("XCTestCase") != nil
+            || ProcessInfo.processInfo.arguments.contains("-ui-testing-reset-state")
     }
 
     private func startUserAffirmationSyncIfNeeded() {
