@@ -1,0 +1,20 @@
+project("AffirmationApp.xcodeproj")
+scheme("AffirmationApp")
+
+devices([
+  "iPhone 17 Pro Max",
+  "iPad Pro 13-inch (M5)"
+])
+
+languages(["en-US"])
+
+output_directory("../../Assets/Icons and Screenshots/Grounded/Fastlane Screenshots")
+clear_previous_screenshots(true)
+erase_simulator(true)
+reinstall_app(true)
+clean(true)
+only_testing(["AffirmationAppUITests/AffirmationAppUITests/testAppStoreSnapshots"])
+override_status_bar(true)
+concurrent_simulators(false)
+skip_open_summary(true)
+xcargs("-parallel-testing-enabled NO")

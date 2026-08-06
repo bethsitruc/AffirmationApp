@@ -30,6 +30,28 @@ struct AffirmationApp: App {
 
     init() {
         let isRunningTests = Self.isRunningTests
+        if ProcessInfo.processInfo.arguments.contains("-ui-testing-reset-state") {
+            let keysToReset = [
+                UserDefaults.Keys.latestAffirmation,
+                UserDefaults.Keys.latestAffirmationFetchedAt,
+                UserDefaults.Keys.affirmations,
+                UserDefaults.Keys.userSubmittedAffirmations,
+                UserDefaults.Keys.deletedUserAffirmationTombstones,
+                UserDefaults.Keys.favoriteAffirmations,
+                UserDefaults.Keys.deletedFavoriteAffirmationTombstones,
+                "appearance.theme",
+                "appearance.font",
+                "autoGeneration.cadence",
+                "autoGeneration.last",
+                "homeRefresh.cadence",
+                "homeRefresh.last",
+            ]
+            keysToReset.forEach {
+                SharedDefaults.removeObject(forKey: $0)
+                CloudPreferenceStore.removeObject(forKey: $0)
+            }
+        }
+
         let syncCoordinator: any UserAffirmationSyncing
         let favoriteSyncCoordinator: any FavoriteLibrarySyncing
         if isRunningTests {
@@ -52,27 +74,6 @@ struct AffirmationApp: App {
             CloudPreferenceStore.startObserving()
         }
 
-        if ProcessInfo.processInfo.arguments.contains("-ui-testing-reset-state") {
-            let keysToReset = [
-                UserDefaults.Keys.latestAffirmation,
-                UserDefaults.Keys.latestAffirmationFetchedAt,
-                UserDefaults.Keys.affirmations,
-                UserDefaults.Keys.userSubmittedAffirmations,
-                UserDefaults.Keys.deletedUserAffirmationTombstones,
-                UserDefaults.Keys.favoriteAffirmations,
-                UserDefaults.Keys.deletedFavoriteAffirmationTombstones,
-                "appearance.theme",
-                "appearance.font",
-                "autoGeneration.cadence",
-                "autoGeneration.last",
-                "homeRefresh.cadence",
-                "homeRefresh.last",
-            ]
-            keysToReset.forEach {
-                SharedDefaults.removeObject(forKey: $0)
-                CloudPreferenceStore.removeObject(forKey: $0)
-            }
-        }
     }
     
     var body: some Scene {

@@ -1,0 +1,42 @@
+opt_out_usage
+require "fileutils"
+require "shellwords"
+
+default_platform(:ios)
+
+def create_app_store_iphone_screenshots
+  source_dir = File.expand_path("../../../Assets/Icons and Screenshots/Grounded/Fastlane Screenshots/en-US", __dir__)
+  output_dir = File.expand_path("../../../Assets/Icons and Screenshots/Grounded/Fastlane Screenshots/app-store-en-US", __dir__)
+
+  FileUtils.mkdir_p(output_dir)
+
+  Dir[File.join(source_dir, "iPhone 17 Pro Max-*.png")].sort.each do |source|
+    output_name = File.basename(source).sub("iPhone 17 Pro Max", "iPhone 6.5")
+    destination = File.join(output_dir, output_name)
+    sh("sips -z 2778 1284 #{source.shellescape} --out #{destination.shellescape} >/dev/null")
+  end
+end
+
+before_all do
+  ENV["DEVELOPER_DIR"] ||= "/Applications/Xcode-beta.app/Contents/Developer"
+end
+
+platform :ios do
+  desc "Capture App Store screenshots with Fastlane Snapshot"
+  lane :screenshots do
+    capture_screenshots(
+      project: "AffirmationApp.xcodeproj",
+      scheme: "AffirmationApp",
+      output_directory: "../../Assets/Icons and Screenshots/Grounded/Fastlane Screenshots",
+      clear_previous_screenshots: true,
+      erase_simulator: true,
+      reinstall_app: true,
+      clean: true,
+      concurrent_simulators: false,
+      skip_open_summary: true,
+      xcargs: "-parallel-testing-enabled NO",
+      only_testing: ["AffirmationAppUITests/AffirmationAppUITests/testAppStoreSnapshots"]
+    )
+    create_app_store_iphone_screenshots
+  end
+end
