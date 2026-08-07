@@ -26,7 +26,7 @@ struct ShareCardComposerView: View {
                         layout: .preview
                     )
                     .aspectRatio(4 / 3, contentMode: .fit)
-                    .frame(maxWidth: 720)
+                    .frame(maxWidth: 520)
                     .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
                     .padding(.horizontal)
 
