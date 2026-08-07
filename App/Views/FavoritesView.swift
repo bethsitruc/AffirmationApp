@@ -35,27 +35,37 @@ struct FavoritesView: View {
                         .padding(DS.Layout.tilePadding)
                     } else {
                         let favorites = store.favoriteAffirmations()
-                        LazyVGrid(
-                            columns: [
-                                GridItem(
-                                    .adaptive(minimum: 280, maximum: 460),
-                                    spacing: DS.Layout.tilePadding
-                                )
-                            ],
-                            spacing: DS.Layout.tilePadding
-                        ) {
-                            ForEach(favorites) { affirmation in
-                                FavoriteTileView(affirmation: affirmation, store: store)
-                                    .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
-                            }
-                        }
-                        .padding(.horizontal, DS.Layout.tilePadding)
+                        favoriteGrid(favorites)
+                            .padding(.horizontal, DS.Layout.tilePadding)
                     }
                 }
                 .frame(maxWidth: 980)
                 .frame(maxWidth: .infinity)
                 .padding(.top, DS.Layout.tilePadding)
                 .padding(.bottom, DS.Layout.tilePadding)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func favoriteGrid(_ favorites: [Affirmation]) -> some View {
+        if favorites.count == 1, let affirmation = favorites.first {
+            FavoriteTileView(affirmation: affirmation, store: store)
+                .frame(maxWidth: 760)
+                .frame(maxWidth: .infinity)
+        } else {
+            LazyVGrid(
+                columns: [
+                    GridItem(
+                        .adaptive(minimum: 320, maximum: 420),
+                        spacing: DS.Layout.tilePadding
+                    )
+                ],
+                spacing: DS.Layout.tilePadding
+            ) {
+                ForEach(favorites) { affirmation in
+                    FavoriteTileView(affirmation: affirmation, store: store)
+                }
             }
         }
     }
@@ -112,7 +122,8 @@ private struct FavoriteTileView: View {
         AffirmationTileView(
             affirmation: affirmation,
             isUserSubmitted: affirmation.isUserCreated,
-            style: .compact
+            style: .compact,
+            minimumHeight: 220
         ) {
             removeFavorite()
         }

@@ -211,13 +211,14 @@ struct MainAffirmationView: View {
                     AffirmationTileView(
                         affirmation: item,
                         isUserSubmitted: item.isUserCreated,
-                        style: .compact
+                        style: .compact,
+                        minimumHeight: 120
                     ) {
                         withAnimation { store.toggleFavorite(for: item) }
                     } shareAction: {
                         shareTarget = item
                     }
-                    .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     // Infinite scroll: load more when last tile appears.
                     .onAppear {
                         if item == affirmations.last {
@@ -237,13 +238,14 @@ struct MainAffirmationView: View {
                         AffirmationTileView(
                             affirmation: affirmation,
                             isUserSubmitted: affirmation.isUserCreated,
-                            style: .compact
+                            style: .compact,
+                            minimumHeight: 120
                         ) {
                             withAnimation { store.toggleFavorite(for: affirmation) }
                         } shareAction: {
                             shareTarget = affirmation
                         }
-                        .frame(minWidth: 220, maxWidth: .infinity, minHeight: 120, alignment: .leading)
+                        .frame(minWidth: 220, maxWidth: .infinity, alignment: .leading)
                         .onAppear {
                             if affirmation == affirmations.last {
                                 displayedCount += 6
@@ -273,13 +275,14 @@ struct MainAffirmationView: View {
                             AffirmationTileView(
                                 affirmation: single,
                                 isUserSubmitted: single.isUserCreated,
-                                style: .compact
+                                style: .compact,
+                                minimumHeight: 120
                             ) {
                                 withAnimation { store.toggleFavorite(for: single) }
                             } shareAction: {
                                 shareTarget = single
                             }
-                            .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .onAppear {
                                 if single == affirmations.last {
                                     displayedCount += 6
@@ -484,6 +487,7 @@ struct MainAffirmationView: View {
         .sheet(item: $shareTarget) { affirmation in
             ShareCardComposerView(affirmation: affirmation)
                 .environmentObject(appearance)
+                .presentationDetents([.large])
         }
         .sheet(isPresented: $showSharePicker) {
             ShareCardPickerView(

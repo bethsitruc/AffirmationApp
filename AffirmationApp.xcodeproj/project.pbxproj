@@ -74,6 +74,7 @@
 				Info.plist,
 				Services/AutoGenerationManager.swift,
 				Store/AffirmationStore.swift,
+				Store/SupportPurchaseManager.swift,
 				Sync/CloudFavoriteLibrarySyncCoordinator.swift,
 				Sync/CloudUserAffirmationSyncCoordinator.swift,
 				Sync/FavoriteLibrarySyncing.swift,

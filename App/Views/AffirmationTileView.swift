@@ -8,6 +8,7 @@ struct AffirmationTileView: View {
     let affirmation: Affirmation
     let isUserSubmitted: Bool
     let style: TileStyle
+    let minimumHeight: CGFloat?
     let action: () -> Void
     let shareAction: (() -> Void)?
     @EnvironmentObject private var appearance: AppearanceSettings
@@ -16,12 +17,14 @@ struct AffirmationTileView: View {
         affirmation: Affirmation,
         isUserSubmitted: Bool,
         style: TileStyle = .compact,
+        minimumHeight: CGFloat? = nil,
         action: @escaping () -> Void,
         shareAction: (() -> Void)? = nil
     ) {
         self.affirmation = affirmation
         self.isUserSubmitted = isUserSubmitted
         self.style = style
+        self.minimumHeight = minimumHeight
         self.action = action
         self.shareAction = shareAction
     }
@@ -124,7 +127,7 @@ struct AffirmationTileView: View {
             } else {
                 core
                     .padding(style == .featured ? DS.Layout.featuredTilePadding : DS.Layout.compactTilePadding)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, minHeight: minimumHeight, alignment: .topLeading)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Layout.cornerRadius, style: .continuous)
                             .fill(theme.cardBackground)
