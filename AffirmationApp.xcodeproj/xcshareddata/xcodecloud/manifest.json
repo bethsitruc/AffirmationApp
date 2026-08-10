@@ -1,0 +1,9 @@
+{
+  "id" : "7a5da32c-72c5-4a08-ab32-f84c278251fb",
+  "targets" : [
+    {
+      "id" : "398C2C61-64F3-4CA5-B4A7-B60C078A0BDE",
+      "name" : "AffirmationApp"
+    }
+  ]
+}
