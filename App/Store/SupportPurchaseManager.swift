@@ -1,8 +1,14 @@
 import Foundation
+import OSLog
 import StoreKit
 
 @MainActor
 final class SupportPurchaseManager: ObservableObject {
+    private static let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "bethsitruc.AffirmationApp",
+        category: "SupportPurchases"
+    )
+
     struct SupportOption: Identifiable {
         let id: String
         let title: String
@@ -36,6 +42,8 @@ final class SupportPurchaseManager: ObservableObject {
     @Published private(set) var purchasingProductID: String?
     @Published var notice: String?
 
+    private var productLoadDiagnostic: String?
+
     var isPurchasing: Bool {
         purchasingProductID != nil
     }
@@ -54,10 +62,18 @@ final class SupportPurchaseManager: ObservableObject {
         defer { isLoading = false }
 
         do {
-            let loadedProducts = try await Product.products(for: Self.options.map(\.id))
+            let requestedIDs = Self.options.map(\.id)
+            let loadedProducts = try await Product.products(for: requestedIDs)
             products = Dictionary(uniqueKeysWithValues: loadedProducts.map { ($0.id, $0) })
+            productLoadDiagnostic = Self.productDiagnostic(
+                requestedIDs: requestedIDs,
+                returnedIDs: loadedProducts.map(\.id)
+            )
+            Self.logger.info("\(self.productLoadDiagnostic ?? "StoreKit product lookup completed.", privacy: .public)")
         } catch {
-            // Keep the support choices visible and retry when the customer taps one.
+            let nsError = error as NSError
+            productLoadDiagnostic = "StoreKit lookup failed (\(nsError.domain) code \(nsError.code)): \(nsError.localizedDescription)"
+            Self.logger.error("\(self.productLoadDiagnostic ?? "Unknown StoreKit lookup error.", privacy: .public)")
         }
     }
 
@@ -103,5 +119,16 @@ final class SupportPurchaseManager: ObservableObject {
 
     private enum PurchaseError: Error {
         case failedVerification
+    }
+
+    private static func productDiagnostic(requestedIDs: [String], returnedIDs: [String]) -> String {
+        let bundleID = Bundle.main.bundleIdentifier ?? "unknown bundle"
+        let missingIDs = Set(requestedIDs).subtracting(returnedIDs).sorted()
+
+        guard !missingIDs.isEmpty else {
+            return "StoreKit returned all \(returnedIDs.count) products for \(bundleID)."
+        }
+
+        return "StoreKit returned \(returnedIDs.count) of \(requestedIDs.count) products for \(bundleID). Missing: \(missingIDs.joined(separator: ", "))."
     }
 }
