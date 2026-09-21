@@ -34,7 +34,8 @@ private enum Snapshot {
                       flag: "-AppleLanguages", transform: { "(\($0))" }, to: app)
         appendSetting(from: cacheDirectory.appendingPathComponent("locale.txt"),
                       flag: "-AppleLocale", transform: { "\"\($0)\"" }, to: app)
-        app.launchArguments += ["-FASTLANE_SNAPSHOT", "YES", "-ui_testing"]
+        app.launchArguments += ["-FASTLANE_SNAPSHOT", "YES", "-ui_testing",
+                                "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryL"]
     }
 
     static func capture(_ name: String, timeWaitingForIdle timeout: TimeInterval) {
@@ -50,7 +51,14 @@ private enum Snapshot {
             Thread.sleep(forTimeInterval: 1)
         }
 
+        // Capture the display: app screenshots can crop rotated windows on iOS 27.
         let screenshot = XCUIScreen.main.screenshot()
+        let attachment = XCTAttachment(screenshot: screenshot)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        XCTContext.runActivity(named: name) { activity in
+            activity.add(attachment)
+        }
         guard var simulator = ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"] else {
             XCTFail("Unable to determine simulator name")
             return

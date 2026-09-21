@@ -1,8 +1,10 @@
 import XCTest
 
 final class AffirmationAppUITests: XCTestCase {
+    @MainActor
     override func setUpWithError() throws {
         continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
     }
 
     @MainActor
@@ -11,6 +13,7 @@ final class AffirmationAppUITests: XCTestCase {
         let uniqueAffirmation = "UI Test Affirmation \(UUID().uuidString.prefix(8))"
 
         app.launchArguments += [
+            "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryL",
             "-ui-testing-reset-state",
             "-ui-testing-disable-background-refresh",
         ]
@@ -28,7 +31,7 @@ final class AffirmationAppUITests: XCTestCase {
         XCTAssertTrue(myAffirmationsTab.exists)
         XCTAssertTrue(settingsTab.exists)
 
-        myAffirmationsTab.tap()
+        tapTab("My Affirmations", in: app)
         let addButton = app.buttons["submit-own-affirmation-button"]
         XCTAssertTrue(addButton.waitForExistence(timeout: 5))
         addButton.tap()
@@ -44,13 +47,13 @@ final class AffirmationAppUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts[uniqueAffirmation].waitForExistence(timeout: 5))
 
-        favoritesTab.tap()
+        tapTab("Favorites", in: app)
         XCTAssertTrue(app.staticTexts["Favorites"].waitForExistence(timeout: 5))
 
-        settingsTab.tap()
+        tapTab("Settings", in: app)
         XCTAssertTrue(app.staticTexts["Settings"].waitForExistence(timeout: 5))
 
-        homeTab.tap()
+        tapTab("Home", in: app)
         XCTAssertTrue(app.staticTexts["Affirmations"].waitForExistence(timeout: 5))
     }
 
@@ -113,5 +116,37 @@ final class AffirmationAppUITests: XCTestCase {
             }
         }
         XCTFail("Could not find a hittable \(name) tab")
+    }
+
+    @MainActor
+    func testAdaptiveLayouts() throws {
+        let app = XCUIApplication()
+        setupSnapshot(app)
+        app.launchArguments += ["-ui-testing-reset-state", "-ui-testing-disable-background-refresh"]
+        XCUIDevice.shared.orientation = .portrait
+        defer { XCUIDevice.shared.orientation = .portrait }
+        app.launch()
+
+        for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
+            XCUIDevice.shared.orientation = orientation
+            let suffix = orientation == .portrait ? "portrait" : "landscape"
+            for tab in ["Home", "Favorites", "My Affirmations", "Settings"] {
+                tapTab(tab, in: app)
+                snapshot("layout_\(suffix)_\(tab.replacingOccurrences(of: " ", with: "_"))")
+            }
+        }
+
+        app.terminate()
+        XCUIDevice.shared.orientation = .portrait
+        app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch()
+        for tab in ["Home", "Favorites", "My Affirmations", "Settings"] {
+            tapTab(tab, in: app)
+            snapshot("layout_accessibility_\(tab.replacingOccurrences(of: " ", with: "_"))")
+            if tab == "Home" {
+                app.swipeUp()
+                snapshot("layout_accessibility_Home_scrolled")
+            }
+        }
     }
 }
