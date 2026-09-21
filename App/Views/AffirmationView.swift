@@ -68,6 +68,7 @@ struct AffirmationView: View {
 ///   - The "Affirmation of the Day" (deterministic per day).
 ///   - A scrollable, adaptive grid/list of affirmation tiles.
 struct MainAffirmationView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     private enum ActiveSheet: Int, Identifiable {
         case generatorConfig
         case generatedPreview
@@ -312,7 +313,10 @@ struct MainAffirmationView: View {
         Button {
             activeSheet = .generatorConfig
         } label: {
-            HStack(spacing: 16) {
+            let layout = dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16))
+                : AnyLayout(HStackLayout(spacing: 16))
+            layout {
                 ZStack {
                     Circle()
                         .fill(appearance.theme.accentColor.opacity(0.18))
@@ -329,8 +333,11 @@ struct MainAffirmationView: View {
                     Text(generationSummaryText)
                         .font(.footnote)
                         .foregroundColor(appearance.theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer()
+                if !dynamicTypeSize.isAccessibilitySize {
+                    Spacer()
+                }
 
                 if isGenerating {
                     ProgressView()
@@ -341,6 +348,7 @@ struct MainAffirmationView: View {
                         .foregroundColor(appearance.theme.secondaryText)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(20)
             .background(
                 RoundedRectangle(cornerRadius: 28, style: .continuous)
