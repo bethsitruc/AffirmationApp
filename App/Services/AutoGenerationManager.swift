@@ -37,15 +37,26 @@ final class AutoGenerationManager {
 
 @MainActor
 final class HomeFeedRefreshManager {
-    private let fetcher = FreshAffirmationFetcher()
-    private let fallback = LocalGenerator()
+    private let fetch: () async -> [String]
+    private let local: () async -> String
+    private let now: () -> Date
     private let batchSize = 10
     private let maxHomeAffirmations = 80
+
+    init(
+        fetch: @escaping () async -> [String] = { await FreshAffirmationFetcher().fetchBatch(limit: 50, includeAuthor: true) },
+        local: @escaping () async -> String = { (try? await LocalGenerator().generate(theme: nil)) ?? "You are enough." },
+        now: @escaping () -> Date = Date.init
+    ) {
+        self.fetch = fetch
+        self.local = local
+        self.now = now
+    }
 
     func refreshIfNeeded(store: AffirmationStore) async {
         let cadence = HomeFeedRefreshPreferences.cadence
         guard let interval = cadence.interval else { return }
-        let now = Date()
+        let now = now()
         if let last = HomeFeedRefreshPreferences.lastRefreshDate,
            now.timeIntervalSince(last) < interval {
             return
@@ -53,17 +64,23 @@ final class HomeFeedRefreshManager {
 
         let quotes = await fetchBatch(count: batchSize)
         apply(quotes, to: store)
-        HomeFeedRefreshPreferences.lastRefreshDate = Date()
+        HomeFeedRefreshPreferences.lastRefreshDate = now
     }
 
     private func fetchBatch(count: Int) async -> [String] {
-        var entries = await fetcher.fetchBatch(limit: max(50, count), includeAuthor: true)
+        var seen = Set<String>()
+        var entries = await fetch().filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && seen.insert($0).inserted }
 
-        while entries.count < count {
-            let local = (try? await fallback.generate(theme: nil)) ?? "You are enough."
-            if !entries.contains(local) {
-                entries.append(local)
+        // A local provider can repeat forever; bound retries, then fill from known seeds.
+        for _ in 0..<count where entries.count < count {
+            let candidate = await local()
+            if !candidate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               seen.insert(candidate).inserted {
+                entries.append(candidate)
             }
+        }
+        for seed in AffirmationSeeds.all where entries.count < count {
+            if seen.insert(seed.text).inserted { entries.append(seed.text) }
         }
         return Array(entries.prefix(count))
     }
@@ -71,7 +88,7 @@ final class HomeFeedRefreshManager {
     private func apply(_ quotes: [String], to store: AffirmationStore) {
         removeOutdatedEntries(from: store, maximum: quotes.count)
 
-        let timestamp = Date()
+        let timestamp = now()
         let newAffirmations: [Affirmation] = quotes.enumerated().map { offset, quote in
             Affirmation(
                 text: quote,

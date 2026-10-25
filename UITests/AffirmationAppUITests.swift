@@ -4,7 +4,9 @@ final class AffirmationAppUITests: XCTestCase {
     @MainActor
     override func setUpWithError() throws {
         continueAfterFailure = false
-        XCUIDevice.shared.orientation = .portrait
+        if ProcessInfo.processInfo.environment["GROUNDED_DUO_POSES"] != "1" {
+            XCUIDevice.shared.orientation = .portrait
+        }
     }
 
     @MainActor
@@ -58,6 +60,33 @@ final class AffirmationAppUITests: XCTestCase {
     }
 
     @MainActor
+    func testNavigationAndSharingSurviveRotation() throws {
+        let app = XCUIApplication()
+        app.launchArguments += [
+            "-ui-testing-reset-state",
+            "-ui-testing-disable-background-refresh",
+            "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL",
+        ]
+        app.launch()
+        defer { XCUIDevice.shared.orientation = .portrait }
+
+        for orientation in [UIDeviceOrientation.landscapeLeft, .portrait] {
+            XCUIDevice.shared.orientation = orientation
+            let shareButton = app.buttons["Share an affirmation card"]
+            XCTAssertTrue(shareButton.waitForExistence(timeout: 5))
+            XCTAssertTrue(shareButton.isHittable)
+            shareButton.tap()
+            let closeButton = app.buttons["Close"]
+            XCTAssertTrue(closeButton.waitForExistence(timeout: 5))
+            XCTAssertTrue(closeButton.isHittable)
+            closeButton.tap()
+            tapTab("Favorites", in: app)
+            XCTAssertTrue(app.staticTexts["Favorites"].waitForExistence(timeout: 5))
+            tapTab("Home", in: app)
+        }
+    }
+
+    @MainActor
     func testAppStoreSnapshots() throws {
         let app = XCUIApplication()
         setupSnapshot(app)
@@ -106,7 +135,7 @@ final class AffirmationAppUITests: XCTestCase {
     }
 
     @MainActor
-    private func tapTab(_ name: String, in app: XCUIApplication) {
+    func tapTab(_ name: String, in app: XCUIApplication) {
         let matches = app.buttons.matching(identifier: name)
         for index in 0..<matches.count {
             let candidate = matches.element(boundBy: index)

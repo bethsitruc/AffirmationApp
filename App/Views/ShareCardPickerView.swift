@@ -39,7 +39,7 @@ struct ShareCardPickerView: View {
             .navigationTitle("Share an Affirmation")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
+                    Button { dismiss() } label: { Label("Close", systemImage: "xmark") }
                 }
             }
         }

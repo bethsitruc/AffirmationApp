@@ -1,0 +1,46 @@
+{
+  "identifier": "2DA9339F-35B4-4A43-BEF2-001331611D32",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "0.99",
+      "familyShareable": false,
+      "internalID": "9000000001",
+      "localizations": [
+        {
+          "description": "Local test support",
+          "displayName": "Small",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "bethsitruc.AffirmationApp.support.small",
+      "referenceName": "Small",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "4.99",
+      "familyShareable": false,
+      "internalID": "9000000002",
+      "localizations": [
+        {
+          "description": "Local test support",
+          "displayName": "Coffee",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "bethsitruc.AffirmationApp.coffee",
+      "referenceName": "Coffee",
+      "type": "Consumable"
+    }
+  ],
+  "settings": {
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA"
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

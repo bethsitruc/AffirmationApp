@@ -2,6 +2,7 @@ import AffirmationShared
 import Foundation
 import Testing
 
+extension GroundedTests {
 @Suite("Fresh Quotes", .serialized)
 struct FreshAffirmationFetcherTests {
     @Test("Fetch batch keeps only uplifting quotes and removes duplicates")
@@ -57,6 +58,52 @@ struct FreshAffirmationFetcherTests {
         #expect(quote == nil)
     }
 
+    @Test("Malformed, empty, and fully filtered payloads return no quotes", arguments: ["not-json", "[]", "[{\"q\":\"Hate and violence\"}]"])
+    func unusablePayload(body: String) async {
+        let fetcher = FreshAffirmationFetcher(session: makeMockSession(statusCode: 200, body: body))
+        #expect(await fetcher.fetchBatch().isEmpty)
+    }
+
+    @Test("Zero limit makes no request and positive limit caps output")
+    func requestLimits() async {
+        let requests = LockedCounter()
+        let session = makeMockSession(statusCode: 200, body: """
+        [{"q":"I trust myself."},{"q":"I believe in growth."},{"q":"I choose joy."}]
+        """)
+        let response = AppTestMockURLProtocol.response
+        AppTestMockURLProtocol.response = { requests.increment(); return try response() }
+        let fetcher = FreshAffirmationFetcher(session: session)
+        #expect(await fetcher.fetchBatch(limit: 0).isEmpty)
+        #expect(requests.value == 0)
+        #expect(await fetcher.fetchBatch(limit: 2).count == 2)
+        #expect(requests.value == 1)
+    }
+
+    @Test("Transport failures yield an empty result")
+    func transportFailure() async {
+        let session = makeMockSession(statusCode: 200, body: "[]")
+        AppTestMockURLProtocol.response = { throw URLError(.notConnectedToInternet) }
+        #expect(await FreshAffirmationFetcher(session: session).fetchBatch().isEmpty)
+    }
+
+    @Test("Whitespace is trimmed and blank or missing author values add no separator")
+    func authorFormatting() async {
+        let fetcher = FreshAffirmationFetcher(session: makeMockSession(statusCode: 200, body: """
+        [{"q":"  I trust myself.  ","a":"  "},{"q":"I choose joy."},{"q":"I believe in growth.","a":" Writer "}]
+        """))
+        #expect(await fetcher.fetchBatch() == ["I trust myself.", "I choose joy.", "I believe in growth. — Writer"])
+    }
+
+    @Test("Cancelled fetch does not return content")
+    func cancelledFetch() async {
+        let fetcher = FreshAffirmationFetcher(session: makeMockSession(statusCode: 200, body: """
+        [{"q":"I trust myself."}]
+        """))
+        let task = Task { await fetcher.fetchBatch() }
+        task.cancel()
+        #expect(await task.value.isEmpty)
+    }
+
     private func makeMockSession(statusCode: Int, body: String) -> URLSession {
         AppTestMockURLProtocol.response = {
             let response = HTTPURLResponse(
@@ -73,7 +120,10 @@ struct FreshAffirmationFetcherTests {
         return URLSession(configuration: configuration)
     }
 }
+}
 
+
+extension GroundedTests {
 @Suite("Shared Preferences", .serialized)
 struct SharedPreferencesTests {
     private let keys = [
@@ -121,6 +171,8 @@ struct SharedPreferencesTests {
         }
     }
 }
+}
+
 
 private final class AppTestMockURLProtocol: URLProtocol, @unchecked Sendable {
     nonisolated(unsafe) static var response: @Sendable () throws -> (HTTPURLResponse, Data) = {

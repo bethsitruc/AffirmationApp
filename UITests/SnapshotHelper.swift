@@ -45,7 +45,10 @@ private enum Snapshot {
         }
 
         if timeout > 0 {
-            _ = app?.wait(for: .runningForeground, timeout: timeout)
+            guard app?.wait(for: .runningForeground, timeout: timeout) == true else {
+                XCTFail("App did not reach the foreground before capture \(name)")
+                return
+            }
         }
         if waitForAnimations {
             Thread.sleep(forTimeInterval: 1)

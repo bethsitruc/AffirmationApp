@@ -1,13 +1,13 @@
 import Foundation
 
-public enum AffirmationColorTheme: String, CaseIterable, Codable {
+public enum AffirmationColorTheme: String, CaseIterable, Codable, Sendable {
     case sage
     case dusk
     case glow
 }
 extension AffirmationColorTheme: Identifiable {}
 
-public enum AffirmationFontPreference: String, CaseIterable, Codable {
+public enum AffirmationFontPreference: String, CaseIterable, Codable, Sendable {
     case serif
     case rounded
     case modern

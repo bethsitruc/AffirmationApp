@@ -24,6 +24,7 @@ public enum CloudPreferenceStore {
     private static var ubiquitous: NSUbiquitousKeyValueStore { .default }
 
     public static func startObserving() {
+        guard !RuntimeEnvironment.isTesting else { return }
         Task { @MainActor in
             let shouldStart = await observationState.shouldStart()
             guard shouldStart else {
@@ -47,10 +48,12 @@ public enum CloudPreferenceStore {
 
     @discardableResult
     public static func synchronize() -> Bool {
-        ubiquitous.synchronize()
+        guard !RuntimeEnvironment.isTesting else { return true }
+        return ubiquitous.synchronize()
     }
 
     public static func string(forKey key: String) -> String? {
+        if RuntimeEnvironment.isTesting { return SharedDefaults.string(forKey: key) }
         if let value = ubiquitous.string(forKey: key) {
             SharedDefaults.set(value, forKey: key)
             return value
@@ -66,6 +69,11 @@ public enum CloudPreferenceStore {
     }
 
     public static func set(_ value: String, forKey key: String) {
+        if RuntimeEnvironment.isTesting {
+            SharedDefaults.set(value, forKey: key)
+            NotificationCenter.default.post(name: .cloudPreferencesDidChange, object: nil)
+            return
+        }
         ubiquitous.set(value, forKey: key)
         SharedDefaults.set(value, forKey: key)
         ubiquitous.synchronize()
@@ -73,6 +81,7 @@ public enum CloudPreferenceStore {
     }
 
     public static func double(forKey key: String) -> Double {
+        if RuntimeEnvironment.isTesting { return SharedDefaults.double(forKey: key) }
         if let cloudNumber = ubiquitous.object(forKey: key) as? NSNumber {
             let value = cloudNumber.doubleValue
             SharedDefaults.set(value, forKey: key)
@@ -88,6 +97,11 @@ public enum CloudPreferenceStore {
     }
 
     public static func set(_ value: Double, forKey key: String) {
+        if RuntimeEnvironment.isTesting {
+            SharedDefaults.set(value, forKey: key)
+            NotificationCenter.default.post(name: .cloudPreferencesDidChange, object: nil)
+            return
+        }
         ubiquitous.set(value, forKey: key)
         SharedDefaults.set(value, forKey: key)
         ubiquitous.synchronize()
@@ -95,6 +109,11 @@ public enum CloudPreferenceStore {
     }
 
     public static func removeObject(forKey key: String) {
+        if RuntimeEnvironment.isTesting {
+            SharedDefaults.removeObject(forKey: key)
+            NotificationCenter.default.post(name: .cloudPreferencesDidChange, object: nil)
+            return
+        }
         ubiquitous.removeObject(forKey: key)
         SharedDefaults.removeObject(forKey: key)
         ubiquitous.synchronize()

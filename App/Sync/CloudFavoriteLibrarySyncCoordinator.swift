@@ -5,7 +5,8 @@ import Foundation
 @MainActor
 final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
     private weak var store: AffirmationStore?
-    private let containerFactory: () -> CKContainer
+    private let submit: (CKDatabaseOperation) -> Void
+    private(set) var currentSync: Task<Void, Never>?
     private let recordType = "FavoriteAffirmation"
 
     private var hasStarted = false
@@ -13,7 +14,11 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
     private var needsAnotherSync = false
 
     init(containerFactory: @escaping () -> CKContainer) {
-        self.containerFactory = containerFactory
+        self.submit = { containerFactory().privateCloudDatabase.add($0) }
+    }
+
+    init(submit: @escaping (CKDatabaseOperation) -> Void) {
+        self.submit = submit
     }
 
     func attach(store: AffirmationStore) {
@@ -38,7 +43,7 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
         }
 
         isSyncing = true
-        Task {
+        currentSync = Task {
             await runSyncLoop()
         }
     }
@@ -55,6 +60,7 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
     private func syncOnce() async {
         guard let store else { return }
         store.noteFavoriteSyncAttempt()
+        var fetchedSuccessfully = false
 
         do {
             let remote = try await fetchRemoteState()
@@ -62,6 +68,7 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
                 favorites: remote.favorites,
                 tombstones: remote.tombstones
             )
+            fetchedSuccessfully = true
         } catch {
             store.noteFavoriteSyncFailure(error)
             #if DEBUG
@@ -73,7 +80,7 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
             let localFavorites = store.favoriteAffirmationsForSync()
             let localTombstones = store.favoriteAffirmationTombstonesForSync()
             try await pushState(favorites: localFavorites, tombstones: localTombstones)
-            store.noteFavoriteSyncSuccess()
+            if fetchedSuccessfully { store.noteFavoriteSyncSuccess() }
         } catch {
             store.noteFavoriteSyncFailure(error)
             #if DEBUG
@@ -146,7 +153,7 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
                 }
             }
 
-            containerFactory().privateCloudDatabase.add(operation)
+            submit(operation)
         }
     }
 
@@ -168,7 +175,7 @@ final class CloudFavoriteLibrarySyncCoordinator: FavoriteLibrarySyncing {
                     continuation.resume(throwing: error)
                 }
             }
-            containerFactory().privateCloudDatabase.add(operation)
+            submit(operation)
         }
     }
 

@@ -37,6 +37,7 @@ struct EditAffirmationView: View {
             // Section for editing the affirmation's text.
             Section(header: Text("Affirmation Text")) {
                 TextEditor(text: $editedAffirmation.text)
+                    .accessibilityIdentifier("edit-affirmation-editor")
                     .frame(minHeight: 100)
             }
 

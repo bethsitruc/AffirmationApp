@@ -18,10 +18,15 @@ def create_app_store_iphone_screenshots
 end
 
 before_all do
-  ENV["DEVELOPER_DIR"] ||= "/Applications/Xcode-beta.app/Contents/Developer"
+  ENV["DEVELOPER_DIR"] ||= "/Applications/Xcode.app/Contents/Developer"
 end
 
 platform :ios do
+  desc "Run the full app and shared-package test suite"
+  lane :test do
+    sh(File.expand_path("../scripts/test.sh", __dir__))
+  end
+
   desc "Capture App Store screenshots with Fastlane Snapshot"
   lane :screenshots do
     capture_screenshots(

@@ -69,6 +69,17 @@ struct AffirmationApp: App {
             syncCoordinator: syncCoordinator,
             favoriteSyncCoordinator: favoriteSyncCoordinator
         )
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-ui-testing-seed-feed") {
+            store.affirmations = (1...18).map { index in
+                Affirmation(
+                    id: UUID(uuidString: String(format: "00000000-0000-0000-0000-%012d", index))!,
+                    text: "Feed test affirmation \(index)",
+                    createdAt: Date(timeIntervalSince1970: Double(1000 - index))
+                )
+            }
+        }
+        #endif
         _store = StateObject(wrappedValue: store)
         if !isRunningTests {
             CloudPreferenceStore.startObserving()
@@ -86,7 +97,8 @@ struct AffirmationApp: App {
                     // Refresh the shared latest quote on a cadence so widgets stay fresh
                     // without hitting the quote API on every launch.
                     .task {
-                        guard !ProcessInfo.processInfo.arguments.contains("-ui-testing-disable-background-refresh") else {
+                        guard !Self.isRunningTests,
+                              !ProcessInfo.processInfo.arguments.contains("-ui-testing-disable-background-refresh") else {
                             return
                         }
                         if shouldRefreshLatestAffirmation {
@@ -111,9 +123,7 @@ struct AffirmationApp: App {
     }
 
     private static var isRunningTests: Bool {
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-            || NSClassFromString("XCTestCase") != nil
-            || ProcessInfo.processInfo.arguments.contains("-ui-testing-reset-state")
+        RuntimeEnvironment.isTesting
     }
 
     private func startUserAffirmationSyncIfNeeded() {

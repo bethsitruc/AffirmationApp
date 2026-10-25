@@ -48,7 +48,7 @@ struct ShareCardComposerView: View {
             .navigationTitle("Share Card")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
+                    Button { dismiss() } label: { Label("Done", systemImage: "checkmark") }
                 }
             }
         }
@@ -72,20 +72,10 @@ struct ShareCardComposerView: View {
 
     private func prepareShareItems() {
         #if canImport(UIKit)
-        let renderer = ImageRenderer(content:
-            AffirmationShareCardView(
-                affirmation: affirmation,
-                theme: appearance.theme,
-                fontPreference: appearance.font,
-                includeBadge: includeBadge,
-                layout: .export
-            )
-            .frame(width: 1200, height: 900)
-        )
-        // A scene can be resized independently of the physical display on iOS 27.
-        // Use SwiftUI's scene-aware scale instead of the legacy main-screen API.
-        renderer.scale = displayScale
-        if let uiImage = renderer.uiImage {
+        if let uiImage = ShareCardRenderer.image(
+            affirmation: affirmation, theme: appearance.theme, font: appearance.font,
+            includeBadge: includeBadge, scale: displayScale
+        ) {
             sharePayload = SharePayload(items: [uiImage])
         } else {
             shareError = "Could not render the card image."
@@ -269,6 +259,21 @@ fileprivate struct ActivityPresenter: UIViewControllerRepresentable {
         init(parent: ActivityPresenter) {
             self.parent = parent
         }
+    }
+}
+#endif
+
+#if canImport(UIKit)
+@MainActor
+enum ShareCardRenderer {
+    static func image(affirmation: Affirmation, theme: AffirmationColorTheme,
+                      font: AffirmationFontPreference, includeBadge: Bool, scale: CGFloat) -> UIImage? {
+        let renderer = ImageRenderer(content: AffirmationShareCardView(
+            affirmation: affirmation, theme: theme, fontPreference: font,
+            includeBadge: includeBadge, layout: .export
+        ).frame(width: 1200, height: 900))
+        renderer.scale = scale
+        return renderer.uiImage
     }
 }
 #endif

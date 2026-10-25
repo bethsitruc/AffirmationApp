@@ -32,16 +32,11 @@ struct AffirmationWidgetProvider<Intent: AffirmationWidgetConfigurationIntent>: 
 
     func timeline(for configuration: Intent, in context: Context) async -> Timeline<AffirmationWidgetEntry> {
         let entry = entry(for: configuration, isSnapshot: false)
-        let refresh: TimeInterval
-        switch configuration.widgetMode {
-        case .shuffle:
-            let interval = configuration.shuffleInterval ?? .hourly
-            refresh = TimeInterval(interval.rawValue)
-        case .specific:
-            refresh = 60 * 60 * 6 // refresh a few times per day for safety
-        }
-
-        return Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(refresh)))
+        let refresh = WidgetAffirmationRepository.refreshDate(
+            mode: configuration.widgetMode == .specific ? .specific : .shuffle,
+            interval: configuration.shuffleInterval.map { TimeInterval($0.rawValue) }, now: Date()
+        )
+        return Timeline(entries: [entry], policy: .after(refresh))
     }
 
     private func entry(for configuration: Intent, isSnapshot: Bool) -> AffirmationWidgetEntry {
@@ -56,28 +51,11 @@ struct AffirmationWidgetProvider<Intent: AffirmationWidgetConfigurationIntent>: 
     }
 
     private func resolveText(for configuration: Intent, isSnapshot: Bool) -> String {
-        let sourceAffirmations = repository.source(
-            configuration.resolvedSource,
-            fallbackToAll: false
+        repository.text(
+            mode: configuration.widgetMode == .specific ? .specific : .shuffle,
+            source: configuration.resolvedSource == .favorites ? .favorites : .personal,
+            selectedID: configuration.affirmation?.id
         )
-
-        switch configuration.widgetMode {
-        case .specific:
-            if let entity = configuration.affirmation,
-               let match = repository.affirmation(with: entity.id) {
-                return match.text
-            }
-            if let first = sourceAffirmations.first {
-                return first.text
-            }
-            return "Pick a favorite or personal affirmation"
-        case .shuffle:
-            let pool = sourceAffirmations
-            if let random = pool.randomElement() {
-                return random.text
-            }
-            return "Favorite or add affirmations"
-        }
     }
 }
 

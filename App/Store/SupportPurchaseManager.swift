@@ -1,6 +1,40 @@
 import Foundation
 import OSLog
 import StoreKit
+import AffirmationShared
+
+enum SupportPurchaseOutcome: Equatable, Sendable { case purchased, pending, cancelled }
+
+@MainActor
+protocol SupportPurchasing {
+    func prices(for ids: [String]) async throws -> [String: String]
+    func purchase(id: String) async throws -> SupportPurchaseOutcome
+}
+
+@MainActor
+final class StoreKitSupportClient: SupportPurchasing {
+    private var products: [String: Product] = [:]
+    func prices(for ids: [String]) async throws -> [String: String] {
+        let loaded = try await Product.products(for: ids)
+        products = Dictionary(uniqueKeysWithValues: loaded.map { ($0.id, $0) })
+        return products.mapValues(\.displayPrice)
+    }
+    static func verified<T>(_ result: VerificationResult<T>) throws -> T {
+        try result.payloadValue
+    }
+    func purchase(id: String) async throws -> SupportPurchaseOutcome {
+        guard let product = products[id] else { throw URLError(.resourceUnavailable) }
+        switch try await product.purchase() {
+        case .success(let verification):
+            let transaction = try Self.verified(verification)
+            await transaction.finish()
+            return .purchased
+        case .pending: return .pending
+        case .userCancelled: return .cancelled
+        @unknown default: throw URLError(.unknown)
+        }
+    }
+}
 
 @MainActor
 final class SupportPurchaseManager: ObservableObject {
@@ -37,19 +71,26 @@ final class SupportPurchaseManager: ObservableObject {
         ),
     ]
 
-    @Published private(set) var products: [String: Product] = [:]
+    @Published private(set) var products: [String: String] = [:]
     @Published private(set) var isLoading = false
     @Published private(set) var purchasingProductID: String?
     @Published var notice: String?
 
     private var productLoadDiagnostic: String?
+    private let client: any SupportPurchasing
+
+    init(client: (any SupportPurchasing)? = nil) {
+        if let client { self.client = client }
+        else if RuntimeEnvironment.isTesting { self.client = UnavailableSupportClient() }
+        else { self.client = StoreKitSupportClient() }
+    }
 
     var isPurchasing: Bool {
         purchasingProductID != nil
     }
 
     func displayPrice(for option: SupportOption) -> String {
-        products[option.id]?.displayPrice ?? option.fallbackPrice
+        products[option.id] ?? option.fallbackPrice
     }
 
     func isPurchasing(_ option: SupportOption) -> Bool {
@@ -63,11 +104,10 @@ final class SupportPurchaseManager: ObservableObject {
 
         do {
             let requestedIDs = Self.options.map(\.id)
-            let loadedProducts = try await Product.products(for: requestedIDs)
-            products = Dictionary(uniqueKeysWithValues: loadedProducts.map { ($0.id, $0) })
+            products = try await client.prices(for: requestedIDs)
             productLoadDiagnostic = Self.productDiagnostic(
                 requestedIDs: requestedIDs,
-                returnedIDs: loadedProducts.map(\.id)
+                returnedIDs: Array(products.keys)
             )
             Self.logger.info("\(self.productLoadDiagnostic ?? "StoreKit product lookup completed.", privacy: .public)")
         } catch {
@@ -78,47 +118,31 @@ final class SupportPurchaseManager: ObservableObject {
     }
 
     func purchase(_ option: SupportOption) async {
+        guard !isPurchasing else { return }
+        purchasingProductID = option.id
+        notice = nil
+        defer { purchasingProductID = nil }
         if products[option.id] == nil {
             await loadProducts()
         }
 
-        guard let product = products[option.id] else {
+        guard products[option.id] != nil else {
             notice = "Support purchases are temporarily unavailable. Please try again later."
             return
         }
 
-        purchasingProductID = option.id
-        defer { purchasingProductID = nil }
-
         do {
-            switch try await product.purchase() {
-            case .success(let verification):
-                let transaction = try verified(verification)
-                await transaction.finish()
+            switch try await client.purchase(id: option.id) {
+            case .purchased:
                 notice = "Thank you for supporting Grounded!"
             case .pending:
                 notice = "Your purchase is pending approval."
-            case .userCancelled:
+            case .cancelled:
                 break
-            @unknown default:
-                notice = "The purchase could not be completed. Please try again."
             }
         } catch {
             notice = "The purchase could not be completed. Please try again."
         }
-    }
-
-    private func verified<T>(_ result: VerificationResult<T>) throws -> T {
-        switch result {
-        case .verified(let value):
-            return value
-        case .unverified:
-            throw PurchaseError.failedVerification
-        }
-    }
-
-    private enum PurchaseError: Error {
-        case failedVerification
     }
 
     private static func productDiagnostic(requestedIDs: [String], returnedIDs: [String]) -> String {
@@ -131,4 +155,10 @@ final class SupportPurchaseManager: ObservableObject {
 
         return "StoreKit returned \(returnedIDs.count) of \(requestedIDs.count) products for \(bundleID). Missing: \(missingIDs.joined(separator: ", "))."
     }
+}
+
+@MainActor
+private struct UnavailableSupportClient: SupportPurchasing {
+    func prices(for ids: [String]) async throws -> [String: String] { [:] }
+    func purchase(id: String) async throws -> SupportPurchaseOutcome { throw URLError(.resourceUnavailable) }
 }

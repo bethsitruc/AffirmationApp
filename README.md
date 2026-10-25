@@ -20,3 +20,7 @@ If you are interested in collaborating, please contact the maintainer first so a
 Copyright (c) Bethany Curtis. All rights reserved.
 
 No license is granted for copying, modifying, distributing, or using this code outside authorized collaboration.
+
+## Testing
+
+Run `./scripts/test.sh` with Xcode 27.1 and an installed Duo simulator. See [the testing guide](docs/testing.md) for coverage, alternate devices, and opt-in integration checks.

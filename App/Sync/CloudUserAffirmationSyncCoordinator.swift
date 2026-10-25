@@ -5,7 +5,8 @@ import Foundation
 @MainActor
 final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
     private weak var store: AffirmationStore?
-    private let containerFactory: () -> CKContainer
+    private let submit: (CKDatabaseOperation) -> Void
+    private(set) var currentSync: Task<Void, Never>?
     private let recordType = "UserAffirmation"
 
     private var hasStarted = false
@@ -13,7 +14,11 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
     private var needsAnotherSync = false
 
     init(containerFactory: @escaping () -> CKContainer) {
-        self.containerFactory = containerFactory
+        self.submit = { containerFactory().privateCloudDatabase.add($0) }
+    }
+
+    init(submit: @escaping (CKDatabaseOperation) -> Void) {
+        self.submit = submit
     }
 
     func attach(store: AffirmationStore) {
@@ -38,7 +43,7 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
         }
 
         isSyncing = true
-        Task {
+        currentSync = Task {
             await self.runSyncLoop()
         }
     }
@@ -55,6 +60,7 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
     private func syncOnce() async {
         guard let store else { return }
         store.noteUserAffirmationSyncAttempt()
+        var fetchedSuccessfully = false
 
         do {
             let remote = try await fetchRemoteState()
@@ -62,6 +68,7 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
                 affirmations: remote.affirmations,
                 tombstones: remote.tombstones
             )
+            fetchedSuccessfully = true
         } catch {
             store.noteUserAffirmationSyncFailure(error)
             #if DEBUG
@@ -76,7 +83,7 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
                 affirmations: localAffirmations,
                 tombstones: localTombstones
             )
-            store.noteUserAffirmationSyncSuccess()
+            if fetchedSuccessfully { store.noteUserAffirmationSyncSuccess() }
         } catch {
             store.noteUserAffirmationSyncFailure(error)
             #if DEBUG
@@ -149,7 +156,7 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
                 }
             }
 
-            containerFactory().privateCloudDatabase.add(operation)
+            submit(operation)
         }
     }
 
@@ -171,7 +178,7 @@ final class CloudUserAffirmationSyncCoordinator: UserAffirmationSyncing {
                     continuation.resume(throwing: error)
                 }
             }
-            containerFactory().privateCloudDatabase.add(operation)
+            submit(operation)
         }
     }
 

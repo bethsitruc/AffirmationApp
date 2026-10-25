@@ -3,6 +3,7 @@ import Foundation
 import Testing
 @testable import AffirmationApp
 
+extension GroundedTests {
 @MainActor
 @Suite("Affirmation Store", .serialized)
 struct AffirmationStoreTests {
@@ -349,7 +350,10 @@ struct AffirmationStoreTests {
         }
     }
 }
+}
 
+
+extension GroundedTests {
 @Suite("Affirmation Generator")
 struct AffirmationGeneratorPromptTests {
     @Test("Prompt adds tailored nostalgic guidance")
@@ -401,6 +405,8 @@ struct AffirmationGeneratorPromptTests {
         #expect(AffirmationGenerator.Tone.grateful.promptQualifier.contains("savoring ordinary gifts"))
     }
 }
+}
+
 
 private struct SharedDefaultsSnapshot {
     let entries: [String: Any]

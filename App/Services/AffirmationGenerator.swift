@@ -7,6 +7,11 @@ import FoundationModels
 
 /// High-level façade that tries to generate a fresh affirmation with Apple's on-device Foundation Models,
 /// then gracefully falls back to the lightweight network API or deterministic local seeds.
+protocol FoundationModelGenerating {
+    var availability: FoundationModelAvailability { get }
+    func generate(theme: String?, tone: AffirmationGenerator.Tone) async throws -> String
+}
+
 struct AffirmationGenerator {
     struct Result {
         let text: String
@@ -26,12 +31,12 @@ struct AffirmationGenerator {
         case local
     }
 
-    private let fmClient: FoundationModelClient
+    private let fmClient: any FoundationModelGenerating
     private let fetcher: FreshAffirmationFetcher
     private let fallbackGenerator: AffirmationGenerating
 
     init(
-        fmClient: FoundationModelClient = FoundationModelClient(),
+        fmClient: any FoundationModelGenerating = FoundationModelClient(),
         fetcher: FreshAffirmationFetcher = FreshAffirmationFetcher(),
         fallbackGenerator: AffirmationGenerating = LocalGenerator()
     ) {
@@ -251,7 +256,7 @@ struct FoundationModelAvailability: Equatable {
     let message: String
 }
 
-struct FoundationModelClient {
+struct FoundationModelClient: FoundationModelGenerating {
     var availability: FoundationModelAvailability {
 #if canImport(FoundationModels)
         if #available(iOS 26.0, macOS 15.0, *) {

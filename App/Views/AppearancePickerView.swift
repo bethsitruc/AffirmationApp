@@ -19,6 +19,8 @@ struct AppearancePickerView: View {
                     } label: {
                         ThemeOptionRow(theme: theme, isSelected: theme == appearance.theme)
                     }
+                    .accessibilityIdentifier("theme-\(theme.rawValue)")
+                    .accessibilityValue(theme == appearance.theme ? "Selected" : "Not selected")
                     .buttonStyle(.plain)
                 }
             }
@@ -30,6 +32,8 @@ struct AppearancePickerView: View {
                     } label: {
                         FontOptionRow(font: font, isSelected: font == appearance.font)
                     }
+                    .accessibilityIdentifier("font-\(font.rawValue)")
+                    .accessibilityValue(font == appearance.font ? "Selected" : "Not selected")
                     .buttonStyle(.plain)
                 }
             }

@@ -192,120 +192,37 @@ struct MainAffirmationView: View {
         combinedAffirmations
     }
 
-    /// Provides the main scrollable content of affirmation tiles.
-    /// - Tiles are adaptively displayed: long affirmations take a full row, short ones are paired in a grid.
-    /// - User-submitted affirmations are labeled.
-    /// - Each tile includes an animated favorite button.
-    /// - Infinite scroll: loading more tiles as the user scrolls.
+    /// Reflow cards as the containing display opens, closes, or rotates.
+    /// Accessibility text uses a single column so each card stays readable.
     var affirmationRows: some View {
-        // Shuffle and take a slice for display.
         let affirmations = Array(feedAffirmations.prefix(displayedCount))
-        var index = 0
-        var rows: [AnyView] = []
+        let columns = dynamicTypeSize.isAccessibilitySize
+            ? [GridItem(.flexible())]
+            : [GridItem(.adaptive(minimum: 280), spacing: DS.Layout.tilePadding)]
 
-        while index < affirmations.count {
-            let item = affirmations[index]
-
-            // Long affirmation: single full-width tile.
-            if item.text.count >= 50 {
-                let view = AnyView(
-                    AffirmationTileView(
-                        affirmation: item,
-                        isUserSubmitted: item.isUserCreated,
-                        style: .compact,
-                        minimumHeight: 120
-                    ) {
-                        withAnimation { store.toggleFavorite(for: item) }
-                    } shareAction: {
-                        shareTarget = item
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    // Infinite scroll: load more when last tile appears.
-                    .onAppear {
-                        if item == affirmations.last {
-                            displayedCount += 6
-                        }
-                    }
-                )
-                rows.append(view)
-                index += 1
-            } else {
-                // Short affirmations: try to pair two in a row (adaptive grid).
-                _ = affirmations.count - index
-                let pair = affirmations[index..<min(index + 2, affirmations.count)].filter { $0.text.count < 50 }
-
-                if pair.count == 2 {
-                    let pairedTiles = ForEach(pair, id: \.id) { affirmation in
-                        AffirmationTileView(
-                            affirmation: affirmation,
-                            isUserSubmitted: affirmation.isUserCreated,
-                            style: .compact,
-                            minimumHeight: 120
-                        ) {
-                            withAnimation { store.toggleFavorite(for: affirmation) }
-                        } shareAction: {
-                            shareTarget = affirmation
-                        }
-                        .frame(minWidth: 220, maxWidth: .infinity, alignment: .leading)
-                        .onAppear {
-                            if affirmation == affirmations.last {
-                                displayedCount += 6
-                            }
-                        }
-                    }
-
-                    let view = AnyView(
-                        ViewThatFits(in: .horizontal) {
-                            HStack(alignment: .top, spacing: DS.Layout.tilePadding) {
-                                pairedTiles
-                            }
-                            .frame(maxWidth: .infinity)
-
-                            VStack(spacing: DS.Layout.tilePadding) {
-                                pairedTiles
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                    )
-                    rows.append(view)
-                    index += 2
-                } else {
-                    // Last single short affirmation: show as a full-width tile.
-                    if let single = pair.first {
-                        let view = AnyView(
-                            AffirmationTileView(
-                                affirmation: single,
-                                isUserSubmitted: single.isUserCreated,
-                                style: .compact,
-                                minimumHeight: 120
-                            ) {
-                                withAnimation { store.toggleFavorite(for: single) }
-                            } shareAction: {
-                                shareTarget = single
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .onAppear {
-                                if single == affirmations.last {
-                                    displayedCount += 6
-                                }
-                            }
-                        )
-                        rows.append(view)
-                        index += 1
-                    } else {
-                        index += 1
+        return LazyVGrid(columns: columns, spacing: DS.Layout.tilePadding) {
+            ForEach(affirmations, id: \.id) { affirmation in
+                AffirmationTileView(
+                    affirmation: affirmation,
+                    isUserSubmitted: affirmation.isUserCreated,
+                    style: .compact,
+                    minimumHeight: 120
+                ) {
+                    withAnimation { store.toggleFavorite(for: affirmation) }
+                } shareAction: {
+                    shareTarget = affirmation
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("feed-card-\(affirmation.id.uuidString)")
+                .onAppear {
+                    if affirmation.id == affirmations.last?.id,
+                       displayedCount < feedAffirmations.count {
+                        displayedCount += 6
                     }
                 }
             }
         }
-
-        // Stack all rows for vertical scrolling.
-        return VStack(spacing: DS.Layout.tilePadding) {
-            ForEach(Array(rows.enumerated()), id: \.offset) { _, rowView in
-                rowView
-            }
-        }
-        .frame(maxWidth: .infinity)
         .padding(DS.Layout.tilePadding)
     }
 
@@ -581,7 +498,7 @@ struct MainAffirmationView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { activeSheet = nil }
+                    Button { activeSheet = nil } label: { Label("Close", systemImage: "xmark") }
                 }
             }
         }
@@ -682,7 +599,7 @@ struct MainAffirmationView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { activeSheet = nil }
+                    Button { activeSheet = nil } label: { Label("Done", systemImage: "checkmark") }
                 }
             }
         }
